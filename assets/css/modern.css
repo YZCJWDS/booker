@@ -245,6 +245,7 @@ body[data-bg-skin="snow"] {
   --burst-color: #e8f7ff;
 }
 
+body[data-bg-skin="meteor"],
 body[data-bg-skin="aurora"] {
   --skin-overlay:
     linear-gradient(112deg, rgba(24, 91, 105, 0.26) 0%, rgba(24, 91, 105, 0.08) 32%, transparent 58%),
@@ -2919,10 +2920,12 @@ body > footer {
   mix-blend-mode: screen;
 }
 
+body[data-bg-skin="meteor"] .home-hero.anime-hero,
 body[data-bg-skin="aurora"] .home-hero.anime-hero {
   background: #dfecef;
 }
 
+body[data-bg-skin="meteor"] .anime-hero .hero-tone-layer,
 body[data-bg-skin="aurora"] .anime-hero .hero-tone-layer {
   background:
     linear-gradient(90deg, rgba(230, 240, 241, 0.98) 0%, rgba(230, 240, 241, 0.9) 34%, rgba(230, 240, 241, 0.68) 56%, rgba(230, 240, 241, 0.22) 78%, rgba(230, 240, 241, 0.03) 100%),
@@ -2932,6 +2935,7 @@ body[data-bg-skin="aurora"] .anime-hero .hero-tone-layer {
     repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.07) 0 1px, transparent 1px 88px);
 }
 
+body[data-bg-skin="meteor"] .anime-hero .hero-tone-layer::after,
 body[data-bg-skin="aurora"] .anime-hero .hero-tone-layer::after {
   position: absolute;
   inset: 0;
@@ -2941,24 +2945,27 @@ body[data-bg-skin="aurora"] .anime-hero .hero-tone-layer::after {
     linear-gradient(102deg, transparent 24%, rgba(255, 210, 143, 0.12) 43%, rgba(169, 201, 255, 0.15) 58%, transparent 76%);
   opacity: 0.82;
   transform: translate3d(-2%, 0, 0);
-  animation: auroraSweep 9s ease-in-out infinite alternate;
+  animation: meteorSweep 9s ease-in-out infinite alternate;
 }
 
+body[data-bg-skin="meteor"] .anime-hero .hero-particle-layer,
 body[data-bg-skin="aurora"] .anime-hero .hero-particle-layer {
   opacity: 0.82;
 }
 
+body[data-bg-skin="meteor"] .anime-hero .hero-badge-dot,
 body[data-bg-skin="aurora"] .anime-hero .hero-badge-dot {
   background: #63d8c0;
   box-shadow: 0 0 0 4px rgba(99, 216, 192, 0.18), 0 0 18px rgba(99, 216, 192, 0.34);
 }
 
+body[data-bg-skin="meteor"] .anime-hero .btn-primary,
 body[data-bg-skin="aurora"] .anime-hero .btn-primary {
   background: #2f6e71;
   box-shadow: 0 14px 34px rgba(47, 110, 113, 0.2);
 }
 
-@keyframes auroraSweep {
+@keyframes meteorSweep {
   0% {
     transform: translate3d(-3%, -1%, 0) skewX(-2deg);
     opacity: 0.68;
