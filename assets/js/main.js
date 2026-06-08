@@ -1297,7 +1297,7 @@
     const PREFERENCES_VERSION = 4;
     const DEFAULT_SKIN = "snow";
     const DEFAULT_SCENE = "snow";
-    const VALID_SKINS = new Set(["snow", "film", "dark", "midnight", "noir"]);
+    const VALID_SKINS = new Set(["snow", "frost-dark", "film", "dark", "midnight", "noir"]);
     const VALID_SCENES = new Set(["snow", "meteor"]);
     const VALID_THEMES = new Set(["morning", "day", "dusk", "night"]);
 
@@ -1363,6 +1363,7 @@
           <div class="ambient-title">风格</div>
           <div class="ambient-options">
             <button class="ambient-chip" type="button" data-bg-skin="snow">霜色</button>
+            <button class="ambient-chip" type="button" data-bg-skin="frost-dark">暗霜</button>
             <button class="ambient-chip" type="button" data-bg-skin="film">胶片</button>
             <button class="ambient-chip" type="button" data-bg-skin="dark">深海</button>
             <button class="ambient-chip" type="button" data-bg-skin="midnight">星幕</button>
