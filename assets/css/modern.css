@@ -2935,7 +2935,9 @@ body[data-hero-scene="meteor"] .anime-hero .hero-tone-layer::after {
 }
 
 body[data-hero-scene="meteor"] .anime-hero .hero-particle-layer {
-  opacity: 0.82;
+  opacity: 0.96;
+  mix-blend-mode: normal;
+  filter: drop-shadow(0 0 12px rgba(68, 174, 198, 0.22));
 }
 
 body[data-hero-scene="meteor"] .anime-hero .hero-badge-dot {

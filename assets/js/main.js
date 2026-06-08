@@ -540,7 +540,55 @@
 
         const time = performance.now() * 0.00024;
         context.save();
-        context.globalCompositeOperation = "lighter";
+        context.globalCompositeOperation = "source-over";
+
+        const drawFeaturedMeteor = (x, y, length, angle, alpha, widthScale = 1) => {
+          const tailX = x - Math.cos(angle) * length;
+          const tailY = y - Math.sin(angle) * length;
+          const glow = context.createLinearGradient(x, y, tailX, tailY);
+          const core = context.createLinearGradient(x, y, tailX, tailY);
+
+          glow.addColorStop(0, `rgba(245, 255, 255, ${0.42 * alpha})`);
+          glow.addColorStop(0.2, `rgba(84, 188, 207, ${0.42 * alpha})`);
+          glow.addColorStop(1, "rgba(84, 188, 207, 0)");
+
+          core.addColorStop(0, `rgba(255, 255, 255, ${0.96 * alpha})`);
+          core.addColorStop(0.18, `rgba(191, 252, 240, ${0.82 * alpha})`);
+          core.addColorStop(1, "rgba(70, 142, 174, 0)");
+
+          context.save();
+          context.lineCap = "round";
+          context.globalAlpha = 1;
+          context.shadowBlur = 18 * widthScale;
+          context.shadowColor = "rgba(68, 174, 198, 0.42)";
+          context.strokeStyle = glow;
+          context.lineWidth = 11 * widthScale;
+          context.beginPath();
+          context.moveTo(tailX, tailY);
+          context.lineTo(x, y);
+          context.stroke();
+
+          context.shadowBlur = 6 * widthScale;
+          context.strokeStyle = core;
+          context.lineWidth = 2.8 * widthScale;
+          context.beginPath();
+          context.moveTo(tailX, tailY);
+          context.lineTo(x, y);
+          context.stroke();
+
+          context.shadowBlur = 14 * widthScale;
+          context.fillStyle = `rgba(255, 255, 255, ${alpha})`;
+          context.beginPath();
+          context.arc(x, y, 3.4 * widthScale, 0, Math.PI * 2);
+          context.fill();
+
+          context.shadowBlur = 0;
+          context.fillStyle = `rgba(84, 188, 207, ${0.34 * alpha})`;
+          context.beginPath();
+          context.arc(x, y, 8 * widthScale, 0, Math.PI * 2);
+          context.fill();
+          context.restore();
+        };
 
         for (let band = 0; band < 3; band += 1) {
           const yBase = height * (0.22 + band * 0.13);
@@ -616,6 +664,12 @@
           context.arc(x, y, 2.4 + trail * 0.45, 0, Math.PI * 2);
           context.fill();
         }
+
+        const angle = Math.PI * 0.14;
+        const pulse = 0.82 + Math.sin(time * 12) * 0.12;
+        drawFeaturedMeteor(width * 0.58, height * 0.12, Math.min(width * 0.24, 260), angle, pulse, 1.12);
+        drawFeaturedMeteor(width * 0.76, height * 0.27, Math.min(width * 0.18, 210), angle, 0.76, 0.9);
+        drawFeaturedMeteor(width * 0.88, height * 0.42, Math.min(width * 0.16, 190), angle, 0.62, 0.72);
 
         context.restore();
       };
