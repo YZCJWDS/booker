@@ -409,22 +409,22 @@
       let particles = [];
       let meteors = [];
       let animationFrame = 0;
-      let activeSkin = document.body.dataset.bgSkin || "snow";
+      let activeScene = document.body.dataset.heroScene || "snow";
 
-      const getActiveSkin = () => document.body.dataset.bgSkin || "snow";
+      const getActiveScene = () => document.body.dataset.heroScene || "snow";
 
-      const isAuroraSkin = () => activeSkin === "aurora";
+      const isMeteorScene = () => activeScene === "meteor";
 
       const pickParticleCount = () => {
         const base = Number.parseInt(getComputedStyle(hero).getPropertyValue("--particle-count"), 10) || 34;
         const mobileRatio = window.innerWidth < 760 ? 0.44 : 1;
         const coreRatio = navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4 ? 0.68 : 1;
-        const skinRatio = isAuroraSkin() ? 1.18 : 1;
-        return Math.max(10, Math.round(base * mobileRatio * coreRatio * skinRatio));
+        const sceneRatio = isMeteorScene() ? 1.18 : 1;
+        return Math.max(10, Math.round(base * mobileRatio * coreRatio * sceneRatio));
       };
 
       const createParticle = (insideViewport = false) => {
-        if (isAuroraSkin()) {
+        if (isMeteorScene()) {
           const roll = Math.random();
           const type = roll > 0.93 ? "glint" : roll > 0.7 ? "star" : "ribbon";
           const colors = ["#83f4da", "#a9c9ff", "#ffd28f", "#f4fbff"];
@@ -473,13 +473,13 @@
         canvas.style.height = `${height}px`;
         context.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-        activeSkin = getActiveSkin();
+        activeScene = getActiveScene();
         particles = Array.from({ length: pickParticleCount() }, () => createParticle(true));
         meteors = [];
       };
 
       const drawParticle = (particle) => {
-        if (isAuroraSkin()) {
+        if (isMeteorScene()) {
           const pulse = 0.74 + Math.sin(particle.drift * 1.8 + particle.phase) * 0.26;
 
           context.save();
@@ -535,8 +535,8 @@
         context.fill();
       };
 
-      const drawAuroraVeil = () => {
-        if (!isAuroraSkin()) return;
+      const drawMeteorSky = () => {
+        if (!isMeteorScene()) return;
 
         const time = performance.now() * 0.00024;
         context.save();
@@ -569,11 +569,59 @@
           context.stroke();
         }
 
+        for (let trail = 0; trail < 4; trail += 1) {
+          const progress = (time * (0.18 + trail * 0.035) + trail * 0.27) % 1;
+          const x = progress * (width + 420) - 120;
+          const y = height * (0.12 + trail * 0.13) + Math.sin(time * 3 + trail) * 18;
+          const length = 92 + trail * 22;
+          const gradient = context.createLinearGradient(x, y, x - length, y - length * 0.4);
+
+          gradient.addColorStop(0, "rgba(250, 255, 255, 0.58)");
+          gradient.addColorStop(0.42, "rgba(131, 244, 218, 0.28)");
+          gradient.addColorStop(1, "rgba(131, 244, 218, 0)");
+
+          context.globalAlpha = 0.55;
+          context.strokeStyle = gradient;
+          context.lineWidth = 1.2 + trail * 0.25;
+          context.beginPath();
+          context.moveTo(x, y);
+          context.lineTo(x - length, y - length * 0.4);
+          context.stroke();
+        }
+
+        for (let trail = 0; trail < 3; trail += 1) {
+          const x = width * (0.52 + trail * 0.15) + Math.sin(time * 5 + trail) * 28;
+          const y = height * (0.16 + trail * 0.14) + Math.cos(time * 4 + trail) * 14;
+          const length = 150 + trail * 28;
+          const gradient = context.createLinearGradient(x, y, x - length, y - length * 0.42);
+
+          gradient.addColorStop(0, "rgba(255, 255, 255, 0.92)");
+          gradient.addColorStop(0.22, "rgba(181, 245, 235, 0.72)");
+          gradient.addColorStop(1, "rgba(131, 244, 218, 0)");
+
+          context.globalAlpha = 0.88;
+          context.strokeStyle = gradient;
+          context.lineWidth = 2.4 + trail * 0.55;
+          context.shadowBlur = 10 + trail * 2;
+          context.shadowColor = "rgba(131, 244, 218, 0.5)";
+          context.beginPath();
+          context.moveTo(x, y);
+          context.lineTo(x - length, y - length * 0.42);
+          context.stroke();
+          context.shadowBlur = 0;
+
+          context.globalAlpha = 0.8;
+          context.fillStyle = "#f8ffff";
+          context.beginPath();
+          context.arc(x, y, 2.4 + trail * 0.45, 0, Math.PI * 2);
+          context.fill();
+        }
+
         context.restore();
       };
 
       const drawConstellationLinks = () => {
-        if (!isAuroraSkin()) return;
+        if (!isMeteorScene()) return;
 
         const stars = particles.filter((particle) => particle.type !== "ribbon");
         context.save();
@@ -616,9 +664,9 @@
       };
 
       const drawMeteors = () => {
-        if (!isAuroraSkin()) return;
+        if (!isMeteorScene()) return;
 
-        if (meteors.length < 2 && Math.random() < 0.008) {
+        if (meteors.length < 3 && Math.random() < 0.018) {
           meteors.push(createMeteor());
         }
 
@@ -659,7 +707,7 @@
       };
 
       const updateParticle = (particle, index) => {
-        if (isAuroraSkin()) {
+        if (isMeteorScene()) {
           particle.drift += particle.type === "ribbon" ? 0.014 : 0.022;
           particle.x += particle.speedX + Math.sin(particle.drift) * 0.12;
           particle.y += particle.speedY + Math.cos(particle.drift * 0.7) * 0.08;
@@ -680,19 +728,19 @@
         }
       };
 
-      const refreshParticlesForSkin = () => {
-        const nextSkin = getActiveSkin();
-        if (nextSkin === activeSkin) return;
+      const refreshParticlesForScene = () => {
+        const nextScene = getActiveScene();
+        if (nextScene === activeScene) return;
 
-        activeSkin = nextSkin;
+        activeScene = nextScene;
         particles = Array.from({ length: pickParticleCount() }, () => createParticle(true));
         meteors = [];
       };
 
       const tick = () => {
-        refreshParticlesForSkin();
+        refreshParticlesForScene();
         context.clearRect(0, 0, width, height);
-        drawAuroraVeil();
+        drawMeteorSky();
 
         particles.forEach((particle, index) => {
           updateParticle(particle, index);
@@ -1192,9 +1240,11 @@
     if (document.querySelector("[data-ambient-panel]")) return;
 
     const STORAGE_KEY = "odile-bg-preferences";
-    const PREFERENCES_VERSION = 2;
-    const DEFAULT_SKIN = "aurora";
-    const VALID_SKINS = new Set(["aurora", "snow", "film", "dark", "midnight", "noir"]);
+    const PREFERENCES_VERSION = 4;
+    const DEFAULT_SKIN = "snow";
+    const DEFAULT_SCENE = "snow";
+    const VALID_SKINS = new Set(["snow", "film", "dark", "midnight", "noir"]);
+    const VALID_SCENES = new Set(["snow", "meteor"]);
     const VALID_THEMES = new Set(["morning", "day", "dusk", "night"]);
 
     const readPreferences = () => {
@@ -1223,11 +1273,13 @@
     };
 
     const normalizeSkinPreference = (preferences = {}) => {
-      if (preferences.skin === "snow" && preferences.version !== PREFERENCES_VERSION) {
-        return DEFAULT_SKIN;
-      }
-
       return VALID_SKINS.has(preferences.skin) ? preferences.skin : DEFAULT_SKIN;
+    };
+
+    const normalizeScenePreference = (preferences = {}) => {
+      if (preferences.skin === "aurora") return "meteor";
+
+      return VALID_SCENES.has(preferences.scene) ? preferences.scene : DEFAULT_SCENE;
     };
 
     const panel = document.createElement("div");
@@ -1256,12 +1308,18 @@
         <div class="ambient-group">
           <div class="ambient-title">风格</div>
           <div class="ambient-options">
-            <button class="ambient-chip" type="button" data-bg-skin="aurora">极光</button>
-            <button class="ambient-chip" type="button" data-bg-skin="snow">雪夜</button>
+            <button class="ambient-chip" type="button" data-bg-skin="snow">霜色</button>
             <button class="ambient-chip" type="button" data-bg-skin="film">胶片</button>
             <button class="ambient-chip" type="button" data-bg-skin="dark">深海</button>
             <button class="ambient-chip" type="button" data-bg-skin="midnight">星幕</button>
             <button class="ambient-chip" type="button" data-bg-skin="noir">黑金</button>
+          </div>
+        </div>
+        <div class="ambient-group">
+          <div class="ambient-title">场景</div>
+          <div class="ambient-options">
+            <button class="ambient-chip" type="button" data-hero-scene="snow">下雪</button>
+            <button class="ambient-chip" type="button" data-hero-scene="meteor">流星</button>
           </div>
         </div>
       </div>
@@ -1274,10 +1332,12 @@
     const autoButton = panel.querySelector("[data-ambient-auto]");
     const themeButtons = Array.from(panel.querySelectorAll("[data-ambient-theme]"));
     const skinButtons = Array.from(panel.querySelectorAll("[data-bg-skin]"));
+    const sceneButtons = Array.from(panel.querySelectorAll("[data-hero-scene]"));
     const initialPreferences = readPreferences();
     let autoMode = initialPreferences.autoMode !== false;
     let currentTheme = VALID_THEMES.has(initialPreferences.theme) ? initialPreferences.theme : getTimeTheme();
     let currentSkin = normalizeSkinPreference(initialPreferences);
+    let currentScene = normalizeScenePreference(initialPreferences);
 
     const setOpen = (open) => {
       panel.classList.toggle("is-open", open);
@@ -1312,12 +1372,23 @@
       if (preview) pulsePreview();
     };
 
+    const applyScene = (scene, preview = true) => {
+      currentScene = VALID_SCENES.has(scene) ? scene : DEFAULT_SCENE;
+      document.body.dataset.heroScene = currentScene;
+      sceneButtons.forEach((button) => {
+        button.classList.toggle("is-active", button.dataset.heroScene === currentScene);
+      });
+      if (preview) pulsePreview();
+    };
+
     const applyPreferences = (preferences, preview = true) => {
       autoMode = preferences.autoMode !== false;
       currentTheme = VALID_THEMES.has(preferences.theme) ? preferences.theme : getTimeTheme();
       currentSkin = normalizeSkinPreference(preferences);
+      currentScene = normalizeScenePreference(preferences);
       applyTheme(autoMode ? getTimeTheme() : currentTheme, preview);
       applySkin(currentSkin, preview);
+      applyScene(currentScene, preview);
     };
 
     const saveCurrentPreferences = () => {
@@ -1325,7 +1396,8 @@
         version: PREFERENCES_VERSION,
         autoMode,
         theme: currentTheme,
-        skin: currentSkin
+        skin: currentSkin,
+        scene: currentScene
       });
     };
 
@@ -1349,6 +1421,13 @@
     skinButtons.forEach((button) => {
       button.addEventListener("click", () => {
         applySkin(button.dataset.bgSkin);
+        saveCurrentPreferences();
+      });
+    });
+
+    sceneButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        applyScene(button.dataset.heroScene);
         saveCurrentPreferences();
       });
     });
