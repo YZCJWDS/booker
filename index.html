@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Odile's Lab - 计算机视觉、技术笔记与生活记录。">
+  <title>Odile's Lab</title>
+  <link rel="icon" href="./tx/1.jpg" type="image/jpeg">
+  <link rel="apple-touch-icon" href="./tx/1.jpg">
+  <link rel="preload" as="image" href="./pictures/hero-bg.webp" type="image/webp" fetchpriority="high">
+  <link rel="preload" as="image" href="./pictures/character-guqinghan-hutao.webp" type="image/webp" fetchpriority="high">
+  <link rel="stylesheet" href="./assets/css/modern.css">
+  <link rel="stylesheet" href="./assets/config/backgrounds.css">
+  <script src="./assets/js/main.js" defer></script>
+</head>
+<body data-page="home">
+  <a class="skip-link" href="#main">跳到主要内容</a>
+  <div class="bg-mesh"></div>
+
+  <div class="nav-wrapper">
+    <nav class="nav" aria-label="Primary navigation">
+      <a class="brand" href="./index.html">
+        <span class="brand-icon"><img src="./tx/1.jpg" alt="" decoding="async"></span>
+        <span>Odile's Lab</span>
+      </a>
+      <div class="nav-links">
+        <a href="./index.html" data-nav="home">首页</a>
+        <a href="./posts.html" data-nav="articles">文章</a>
+        <a href="./gallery.html" data-nav="gallery">相册</a>
+        <a href="./projects.html" data-nav="projects">项目</a>
+        <a href="./about.html" data-nav="about">关于</a>
+        <a href="https://github.com/YZCJWDS?tab=repositories" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </div>
+    </nav>
+  </div>
+
+  <main id="main">
+    <section class="home-hero anime-hero" data-anime-hero style="--particle-count: 38; --mouse-strength: 1;">
+      <picture class="hero-bg-layer" data-hero-bg>
+        <source srcset="./pictures/hero-bg.webp" type="image/webp">
+        <img src="./pictures/hero-bg.png" alt="" fetchpriority="high" decoding="async">
+      </picture>
+
+      <div class="hero-tone-layer" aria-hidden="true"></div>
+      <canvas class="hero-particle-layer" width="1600" height="900" aria-hidden="true" data-hero-particles></canvas>
+
+      <div class="hero-character-layer">
+        <button class="hero-character"
+          type="button"
+          aria-label="触发角色台词"
+          data-hero-character
+          data-dialogues="霜色正好，适合写一点长久的东西。|别急，先把今天这一页写漂亮。|火光很小也够暖，雪夜里尤其如此。|新的灵感来了，要不要先记下来？">
+          <picture class="hero-character-picture">
+            <source srcset="./pictures/character-guqinghan-hutao.webp" type="image/webp">
+            <img src="./pictures/character-guqinghan-hutao.png" alt="" decoding="async">
+          </picture>
+          <span class="character-shimmer character-shimmer-hair"></span>
+          <span class="character-shimmer character-shimmer-ornament"></span>
+        </button>
+        <div class="hero-dialogue" data-hero-dialogue aria-live="polite"></div>
+      </div>
+
+      <div class="container hero-layout">
+        <div class="hero-copy hero-content-layer">
+          <div class="hero-badge">
+            <span class="hero-badge-dot"></span>
+            <span>正在整理研究、部署和生活里的小发现</span>
+          </div>
+          <h1 class="hero-title">
+            把研究做细，<br>
+            把生活写得<span class="title-scribble">轻一点</span>。
+          </h1>
+          <p class="hero-subtitle">
+            这里是 Odile 的个人实验室。记录计算机视觉、VPS 折腾、论文复盘，
+            也保存一些日常灵感和照片碎片。
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="./posts/computer-vision-gaze.html">读最新文章</a>
+            <a class="btn btn-secondary" href="./projects.html">看看项目</a>
+          </div>
+          <p class="hero-note">纯静态博客，方便迁移，也适合慢慢打磨。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container home-grid">
+        <article class="story-card featured-article">
+          <div>
+            <div class="card-label">Latest Article</div>
+            <h2>Gaze 信息在第一视角动作识别中的作用</h2>
+            <p>
+              眼动信息可以作为注意先验、目标线索和行为意图补充，帮助模型在复杂第一视角视频里找到更关键的区域。
+            </p>
+          </div>
+          <div>
+            <div class="tag-row">
+              <span>Computer Vision</span>
+              <span>Gaze</span>
+              <span>Research</span>
+            </div>
+            <a class="index-link" href="./posts/computer-vision-gaze.html">阅读全文 →</a>
+          </div>
+        </article>
+
+        <div class="side-stack">
+          <section class="mini-widget time-card">
+            <div class="widget-title">
+              <strong>本地时间</strong>
+              <span data-local-date>--</span>
+            </div>
+            <div class="time-value" data-local-time>--:--</div>
+            <p class="time-caption">适合泡杯水，再继续写一段。</p>
+          </section>
+
+          <section class="mini-widget">
+            <div class="widget-title">
+              <strong>今日心情</strong>
+              <span>pick one</span>
+            </div>
+            <div class="mood-buttons" data-mood-group>
+              <button class="mood-pill is-active" type="button" data-mood="清醒">清醒</button>
+              <button class="mood-pill" type="button" data-mood="松弛">松弛</button>
+              <button class="mood-pill" type="button" data-mood="专注">专注</button>
+            </div>
+            <p class="mood-output" data-mood-output>清醒地记录一点，不急着把所有问题一次解决。</p>
+          </section>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-sm">
+      <div class="container">
+        <div class="section-head">
+          <p class="eyebrow">Explore</p>
+          <h2>顺着兴趣往下走</h2>
+          <p>文章、项目、照片和归档都保持轻量结构，方便之后继续扩展。</p>
+        </div>
+
+        <div class="quick-links">
+          <a class="quick-link" href="./posts.html">
+            <small>Articles</small>
+            <strong>技术笔记与研究复盘</strong>
+            <span>读文章 →</span>
+          </a>
+          <a class="quick-link" href="./gallery.html">
+            <small>Gallery</small>
+            <strong>生活瞬间和照片墙</strong>
+            <span>看相册 →</span>
+          </a>
+          <a class="quick-link" href="./archive.html">
+            <small>Archive</small>
+            <strong>按时间线翻找旧记录</strong>
+            <span>查归档 →</span>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p>© <span data-year></span> Odile's Lab. 探索、学习、慢慢创造。</p>
+      <a href="https://github.com/YZCJWDS?tab=repositories" target="_blank" rel="noopener noreferrer">GitHub Repositories</a>
+    </div>
+  </footer>
+
+  <button class="back-to-top" type="button" aria-label="返回顶部" data-back-to-top>↑</button>
+</body>
+</html>

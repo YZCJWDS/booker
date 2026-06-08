@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="文章归档 - 按时间线查看所有文章">
+  <title>归档 | Odile's Lab</title>
+  
+  <link rel="icon" href="./tx/1.jpg" type="image/jpeg">
+  <link rel="apple-touch-icon" href="./tx/1.jpg">
+  <link rel="stylesheet" href="./assets/css/modern.css">
+  <link rel="stylesheet" href="./assets/config/backgrounds.css">
+  <script src="./assets/js/main.js" defer></script>
+
+</head>
+<body data-page="archive">
+  <div class="bg-mesh"></div>
+
+  <div class="nav-wrapper">
+    <nav class="nav">
+      <a class="brand" href="./index.html">
+        <div class="brand-icon"><img src="./tx/1.jpg" alt="" decoding="async"></div>
+        <span>Odile's Lab</span>
+      </a>
+      <div class="nav-links">
+        <a href="./index.html" data-nav="home">首页</a>
+        <a href="./posts.html" data-nav="articles">文章</a>
+        <a href="./gallery.html" data-nav="gallery">相册</a>
+        <a href="./projects.html" data-nav="projects">项目</a>
+        <a href="./about.html" data-nav="about">关于</a>
+        <a href="https://github.com/YZCJWDS?tab=repositories" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </div>
+    </nav>
+  </div>
+
+  <header class="page-header-with-bg">
+    <div class="page-header-bg-image">
+      <picture>
+        <source srcset="./pictures/bg-archive.png" type="image/png">
+        <img src="./pictures/bg-archive.png" alt="" loading="lazy" decoding="async">
+      </picture>
+    </div>
+    <div class="page-header-overlay"></div>
+    <div class="container page-header-content">
+      <div class="hero-badge">
+        <span class="hero-badge-icon">📚</span>
+        <span>Archive</span>
+      </div>
+      <h1>文章归档</h1>
+      <p>按时间线查看所有文章</p>
+    </div>
+  </header>
+
+  <main class="page-main">
+    <div class="container page-content page-content-narrow">
+
+      <div class="archive-stats">
+        <div class="glass-card archive-stat">
+          <div class="archive-number">24</div>
+          <div class="archive-label">总文章数</div>
+        </div>
+        <div class="glass-card archive-stat">
+          <div class="archive-number archive-number-accent">6</div>
+          <div class="archive-label">分类数</div>
+        </div>
+        <div class="glass-card archive-stat">
+          <div class="archive-number archive-number-success">18</div>
+          <div class="archive-label">标签数</div>
+        </div>
+      </div>
+
+      <div class="archive-year-block">
+        <div class="archive-year-heading">
+          <div class="archive-year-dot"></div>
+          <h2>2026</h2>
+        </div>
+
+        <div class="archive-month-list">
+          <h3>六月</h3>
+
+          <a href="./posts/vps-oracle-singbox.html" class="glass-card archive-entry">
+            <div class="archive-date">06-05</div>
+            <div>
+              <div class="archive-entry-title">Oracle VPS 与个人代理/博客部署笔记</div>
+              <span class="tag-pill">VPS</span>
+            </div>
+          </a>
+
+          <a href="./posts/computer-vision-gaze.html" class="glass-card archive-entry">
+            <div class="archive-date">06-04</div>
+            <div>
+              <div class="archive-entry-title">Gaze 信息在第一视角动作识别中的作用</div>
+              <span class="tag-pill tag-success">CV</span>
+            </div>
+          </a>
+
+          <a href="./posts/thesis-defense.html" class="glass-card archive-entry">
+            <div class="archive-date">06-03</div>
+            <div>
+              <div class="archive-entry-title">毕业论文答辩准备记录</div>
+              <span class="tag-pill tag-secondary">论文</span>
+            </div>
+          </a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="page-footer">
+    <div class="container">
+      <p>© <span data-year></span> Odile's Lab</p>
+    </div>
+  </footer>
+</body>
+</html>

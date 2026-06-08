@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="照片墙 - 记录生活中的美好瞬间">
+  <title>相册 | Odile's Lab</title>
+  
+  <link rel="icon" href="./tx/1.jpg" type="image/jpeg">
+  <link rel="apple-touch-icon" href="./tx/1.jpg">
+  <link rel="stylesheet" href="./assets/css/modern.css">
+  <link rel="stylesheet" href="./assets/config/backgrounds.css">
+  <script src="./assets/js/main.js" defer></script>
+
+</head>
+<body data-page="gallery">
+  <div class="bg-mesh"></div>
+
+  <div class="nav-wrapper">
+    <nav class="nav">
+      <a class="brand" href="./index.html">
+        <div class="brand-icon"><img src="./tx/1.jpg" alt="" decoding="async"></div>
+        <span>Odile's Lab</span>
+      </a>
+      <div class="nav-links">
+        <a href="./index.html" data-nav="home">首页</a>
+        <a href="./posts.html" data-nav="articles">文章</a>
+        <a href="./gallery.html" data-nav="gallery">相册</a>
+        <a href="./projects.html" data-nav="projects">项目</a>
+        <a href="./about.html" data-nav="about">关于</a>
+        <a href="https://github.com/YZCJWDS?tab=repositories" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </div>
+    </nav>
+  </div>
+
+  <header class="page-header-with-bg">
+    <div class="page-header-bg-image">
+      <picture>
+        <source srcset="./pictures/2.png" type="image/png">
+        <img src="./pictures/2.png" alt="" loading="lazy" decoding="async">
+      </picture>
+    </div>
+    <div class="page-header-overlay"></div>
+    <div class="container page-header-content">
+      <div class="hero-badge">
+        <span class="hero-badge-icon">📷</span>
+        <span>Gallery</span>
+      </div>
+      <h1>生活瞬间</h1>
+      <p>用照片记录生活中的美好时刻</p>
+    </div>
+  </header>
+
+  <main class="page-main">
+    <div class="container page-content">
+
+      <div class="page-grid page-grid-gallery">
+        <div class="glass-card gallery-tile tile-purple">
+          <span class="gallery-icon">📷</span>
+          <p class="gallery-caption">日常生活</p>
+        </div>
+
+        <div class="glass-card gallery-tile tile-pink">
+          <span class="gallery-icon">☕</span>
+          <p class="gallery-caption">美食记录</p>
+        </div>
+
+        <div class="glass-card gallery-tile tile-green">
+          <span class="gallery-icon">📚</span>
+          <p class="gallery-caption">学习时光</p>
+        </div>
+
+        <div class="glass-card gallery-tile tile-blue">
+          <span class="gallery-icon">💻</span>
+          <p class="gallery-caption">技术笔记</p>
+        </div>
+
+        <div class="glass-card gallery-tile tile-warm">
+          <span class="gallery-icon">✈️</span>
+          <p class="gallery-caption">旅行见闻</p>
+        </div>
+
+        <div class="glass-card gallery-tile tile-violet">
+          <span class="gallery-icon">🌿</span>
+          <p class="gallery-caption">绿植日记</p>
+        </div>
+      </div>
+
+      <div class="glass-card gallery-note">
+        <span class="gallery-icon">📸</span>
+        <p>
+          照片持续更新中...
+          <br>
+          <small>将真实照片放到 assets/images/gallery/ 目录</small>
+        </p>
+      </div>
+    </div>
+  </main>
+
+  <footer class="page-footer">
+    <div class="container">
+      <p>© <span data-year></span> Odile's Lab</p>
+    </div>
+  </footer>
+</body>
+</html>

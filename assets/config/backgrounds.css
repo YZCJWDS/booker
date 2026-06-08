@@ -1,0 +1,149 @@
+/*
+  Site background image interface
+  - The whole site uses the same calm anime illustration by default.
+  - This file is loaded by every page, so pages opened directly still get the image.
+  - Replace the two URLs below when changing the global background artwork.
+*/
+
+body {
+  --page-bg: linear-gradient(180deg, #e6eef4 0%, #eef5f7 44%, #f8fbfb 100%);
+  --bg-image-url: url("../../pictures/hero-bg.webp");
+  --bg-image-fallback-url: url("../../pictures/hero-bg.png");
+  --active-bg-image-url: var(--bg-image-url);
+  --active-bg-fallback-url: var(--bg-image-fallback-url);
+  --bg-image-opacity: 0.72;
+  --bg-image-position: right 46%;
+  --bg-image-size: cover;
+  --header-bg-position: right 46%;
+  --bg-readability-overlay:
+    linear-gradient(90deg, rgba(244, 249, 251, 0.5) 0%, rgba(244, 249, 251, 0.34) 38%, rgba(244, 249, 251, 0.12) 66%, rgba(244, 249, 251, 0.02) 100%),
+    linear-gradient(180deg, rgba(247, 251, 252, 0.12) 0%, rgba(239, 246, 249, 0.06) 42%, rgba(248, 251, 249, 0.3) 82%, rgba(248, 251, 249, 0.46) 100%);
+}
+
+body[data-page="home"] {
+  --page-bg: linear-gradient(180deg, #e2ebf1 0%, #edf5f7 56%, #f8fbf7 100%);
+  --bg-image-opacity: 0.26;
+}
+
+body[data-page="posts"],
+body[data-page="articles"] {
+  --page-bg: linear-gradient(180deg, #e8f0f5 0%, #f4f8f9 58%, #fbfbf5 100%);
+  --bg-image-url: url("../../pictures/bg-posts.png");
+  --bg-image-fallback-url: url("../../pictures/bg-posts.png");
+  --bg-image-opacity: 0.75;
+  --bg-image-position: 76% 45%;
+  --header-bg-position: 78% 44%;
+}
+
+body[data-page="article"] {
+  --page-bg: linear-gradient(180deg, #eef5f7 0%, #f8fbfb 54%, #fffdf7 100%);
+  --bg-image-url: url("../../pictures/bg-extra-1.png");
+  --bg-image-fallback-url: url("../../pictures/bg-extra-1.png");
+  --bg-image-opacity: 0.65;
+  --bg-image-position: right 46%;
+  --header-bg-position: right 44%;
+}
+
+body[data-page="projects"] {
+  --page-bg: linear-gradient(180deg, #e7f1f5 0%, #f2f8f9 50%, #fbf7f4 100%);
+  --bg-image-url: url("../../pictures/bg-projects.png");
+  --bg-image-fallback-url: url("../../pictures/bg-projects.png");
+  --bg-image-opacity: 0.75;
+  --bg-image-position: 76% 46%;
+  --header-bg-position: 76% 44%;
+}
+
+body[data-page="gallery"] {
+  --page-bg: linear-gradient(180deg, #edf4f8 0%, #f7fbfb 50%, #fff8f3 100%);
+  --bg-image-url: url("../../pictures/2.png");
+  --bg-image-fallback-url: url("../../pictures/2.png");
+  --bg-image-opacity: 0.78;
+  --bg-image-position: 78% 34%;
+  --header-bg-position: 78% 26%;
+  --header-image-offset-y: 78px;
+}
+
+body[data-page="gallery"] .page-header-with-bg {
+  --header-bg-scale: 1.12;
+}
+
+body[data-page="gallery"] .page-header-bg-image {
+  inset: -168px -44px -48px;
+}
+
+body[data-page="about"] {
+  --page-bg: linear-gradient(180deg, #e8f0f5 0%, #f3f8f8 52%, #fffaf2 100%);
+  --bg-image-url: url("../../pictures/bg-about.png");
+  --bg-image-fallback-url: url("../../pictures/bg-about.png");
+  --bg-image-opacity: 0.72;
+  --bg-image-position: center 48%;
+  --header-bg-position: center 46%;
+}
+
+body[data-page="friends"] {
+  --page-bg: linear-gradient(180deg, #edf4f7 0%, #f7faf8 58%, #fff8f3 100%);
+  --bg-image-url: url("../../pictures/bg-friends.png");
+  --bg-image-fallback-url: url("../../pictures/bg-friends.png");
+  --bg-image-opacity: 0.72;
+  --bg-image-position: center 47%;
+  --header-bg-position: center 45%;
+}
+
+body[data-page="archive"] {
+  --page-bg: linear-gradient(180deg, #eaf2f5 0%, #f5faf8 48%, #fffaf3 100%);
+  --bg-image-url: url("../../pictures/bg-archive.png");
+  --bg-image-fallback-url: url("../../pictures/bg-archive.png");
+  --bg-image-opacity: 0.68;
+  --bg-image-position: center 46%;
+  --header-bg-position: center 44%;
+}
+
+body[data-page="404"] {
+  --page-bg: linear-gradient(180deg, #e8f1f5 0%, #f4faf9 52%, #fff8ef 100%);
+  --bg-image-url: url("../../pictures/bg-404.png");
+  --bg-image-fallback-url: url("../../pictures/bg-404.png");
+  --bg-image-opacity: 0.72;
+  --bg-image-position: center 46%;
+  --header-bg-position: center 44%;
+}
+
+body[data-bg-image],
+body[style*="--bg-image-url"] {
+  --bg-image-opacity: 0.28;
+}
+
+body[data-bg-overlay] {
+  --bg-image-opacity: 0.42;
+}
+
+body[data-bg-overlay]::before {
+  background:
+    var(--bg-readability-overlay),
+    var(--ambient-overlay),
+    var(--skin-overlay);
+}
+
+@media (max-width: 760px) {
+  body {
+    --bg-image-opacity: 0.54;
+    --bg-image-position: 68% 46%;
+    --header-bg-position: 68% 44%;
+    --bg-readability-overlay:
+      linear-gradient(90deg, rgba(245, 250, 252, 0.52), rgba(245, 250, 252, 0.24)),
+      linear-gradient(180deg, rgba(247, 251, 252, 0.18), rgba(247, 250, 247, 0.54) 74%);
+  }
+
+  body[data-page="gallery"] {
+    --bg-image-position: 78% 32%;
+    --header-bg-position: 78% 24%;
+    --header-image-offset-y: 92px;
+  }
+
+  body[data-page="gallery"] .page-header-with-bg {
+    --header-bg-scale: 1.15;
+  }
+
+  body[data-page="gallery"] .page-header-bg-image {
+    inset: -188px -44px -52px;
+  }
+}

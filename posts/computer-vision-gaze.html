@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Gaze 信息在第一视角动作识别中的作用。">
+  <title>Gaze 信息在第一视角动作识别中的作用 | Odile's Lab</title>
+  
+  <link rel="icon" href="../tx/1.jpg" type="image/jpeg">
+  <link rel="apple-touch-icon" href="../tx/1.jpg">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/config/backgrounds.css">
+  <script src="../assets/js/main.js" defer></script>
+</head>
+<body data-page="article">
+  <a class="skip-link" href="#main">跳到主要内容</a>
+
+  <header class="site-header">
+    <nav class="nav container" aria-label="Primary navigation">
+      <a class="brand" href="../index.html">
+        <span class="brand-mark"><img src="../tx/1.jpg" alt="" decoding="async"></span>
+        <span class="brand-text">Odile's Lab</span>
+      </a>
+      <div class="nav-links">
+        <a href="../index.html" data-nav="home">首页</a>
+        <a href="../posts.html" data-nav="articles">文章</a>
+        
+        <a href="../gallery.html" data-nav="gallery">相册</a>
+        <a href="../projects.html" data-nav="projects">项目</a>
+        <a href="../about.html" data-nav="about">关于</a>
+        <a href="https://github.com/YZCJWDS?tab=repositories" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </div>
+    </nav>
+  </header>
+
+  <main id="main" class="article-shell">
+    <div class="container article-with-sidebar">
+      <article class="article-layout">
+        <header class="article-header">
+          <a class="back-link" href="../posts.html">← 返回文章列表</a>
+          <div class="article-meta">
+            <time datetime="2026-06-04">2026-06-04</time>
+            <span>Computer Vision</span>
+            <span>Gaze</span>
+          </div>
+          <h1>Gaze 信息在第一视角动作识别中的作用</h1>
+          <p>第一视角视频天然包含"我正在看哪里"的线索。Gaze 信息可以补足普通 RGB 视频难以表达的注意、目标和意图。</p>
+        </header>
+
+        <div class="article-content">
+          <h2>为什么 gaze 重要</h2>
+          <p>在第一视角动作识别中，相机视角通常跟随佩戴者运动。手、物体、背景会频繁遮挡或抖动，模型需要从复杂场景里判断真正相关的区域。Gaze 可以作为一种弱监督或辅助模态，提示模型关注人正在交互的目标。</p>
+
+          <h2>可能提供的线索</h2>
+          <ul>
+            <li><strong>注意先验：</strong>眼动点附近区域往往包含当前任务相关物体。</li>
+            <li><strong>动作阶段：</strong>动作开始前的 gaze 转移可能暗示下一步目标。</li>
+            <li><strong>意图补充：</strong>相同手部动作在不同注视目标下可能代表不同语义。</li>
+            <li><strong>噪声过滤：</strong>在复杂背景下，gaze 可以帮助模型降低无关区域权重。</li>
+          </ul>
+
+          <h2>融合方式</h2>
+          <p>一个直观做法是把 gaze 点转换为 heatmap，与 RGB 特征在空间维度融合。也可以在 transformer 结构中把 gaze 当作额外 token 或 attention bias，让模型在时序建模时利用注视变化。</p>
+
+          <pre><code># 简化示意：把 gaze heatmap 作为附加通道
+rgb = load_video_clip()          # [T, 3, H, W]
+gaze = build_gaze_heatmap()      # [T, 1, H, W]
+model_input = concat(rgb, gaze)  # [T, 4, H, W]</code></pre>
+
+          <h2>实验时需要注意</h2>
+          <p>Gaze 标注可能存在采样频率、同步误差和个体差异。实验中需要明确 gaze 是训练阶段可见、推理阶段可见，还是只作为蒸馏/监督信号使用。不同设定代表不同的应用边界。</p>
+
+          <h2>下一步记录</h2>
+          <p>后续可以继续整理相关论文的模型结构、数据集设置、评价指标和可复现实验配置，把想法转成更具体的实验计划。</p>
+        </div>
+
+        <div class="related-posts">
+          <h2>相关文章</h2>
+          <div class="related-grid">
+            <article class="article-card">
+              <div class="article-meta">
+                <time datetime="2026-06-03">2026-06-03</time>
+                <span>Thesis</span>
+              </div>
+              <h3><a href="./thesis-defense.html">毕业论文答辩准备记录</a></h3>
+              <p>答辩前的材料检查、PPT 叙事结构、常见问题准备与现场表达复盘。</p>
+            </article>
+            <article class="article-card">
+              <div class="article-meta">
+                <time datetime="2026-06-05">2026-06-05</time>
+                <span>VPS</span>
+              </div>
+              <h3><a href="./vps-oracle-singbox.html">Oracle VPS 与个人代理/博客部署笔记</a></h3>
+              <p>从静态博客目录、Nginx 配置到 VPS 安全习惯，整理个人实验服务器的部署流程。</p>
+            </article>
+          </div>
+        </div>
+      </article>
+
+      <aside class="toc-wrapper" data-toc>
+        <h3>目录</h3>
+      </aside>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p>© <span data-year></span> Odile's Lab.</p>
+      <a href="https://github.com/YZCJWDS?tab=repositories" target="_blank" rel="noopener noreferrer">GitHub Repositories</a>
+    </div>
+  </footer>
+
+  <button class="back-to-top" type="button" aria-label="返回顶部" data-back-to-top>↑</button>
+</body>
+</html>

@@ -1,0 +1,53 @@
+# Local deployment config and secrets
+.deploy-config
+.deploy-config.ps1.json
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.crt
+*.p12
+
+# Operating system files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs and temporary files
+*.log
+*.tmp
+.cache/
+tmp/
+temp/
+
+# Build output and local archives
+dist/
+build/
+*.zip
+*.tar
+*.tar.gz
+*.7z
+
+# Node.js
+node_modules/
+package-lock.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Backup files
+*.bak
+*.backup
+*-old.*
+*-backup.*

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>动画测试 | Odile's Lab</title>
+
+  <link rel="icon" href="./tx/1.jpg" type="image/jpeg">
+  <link rel="apple-touch-icon" href="./tx/1.jpg">
+  <link rel="stylesheet" href="./assets/css/modern.css">
+  <link rel="stylesheet" href="./assets/config/backgrounds.css">
+  <script src="./assets/js/main.js" defer></script>
+
+  <style>
+    .debug-info {
+      position: fixed;
+      top: 80px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 16px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 12px;
+      z-index: 9999;
+    }
+  </style>
+</head>
+<body data-page="test">
+  <div class="bg-mesh"></div>
+
+  <div class="nav-wrapper">
+    <nav class="nav">
+      <a class="brand" href="./index.html">
+        <div class="brand-icon"><img src="./tx/1.jpg" alt="" decoding="async"></div>
+        <span>Odile's Lab</span>
+      </a>
+      <div class="nav-links">
+        <a href="./index.html">首页</a>
+        <a href="./posts.html">文章</a>
+      </div>
+    </nav>
+  </div>
+
+  <header class="page-header-with-bg" style="border: 2px solid red;">
+    <div class="page-header-bg-image">
+      <picture>
+        <img src="./pictures/bg-posts.png" alt="" loading="eager">
+      </picture>
+    </div>
+    <div class="page-header-overlay"></div>
+    <div class="container page-header-content">
+      <div class="hero-badge">
+        <span style="font-size: 24px;">🧪</span>
+        <span>Animation Test</span>
+      </div>
+      <h1>动画测试页面</h1>
+      <p>移动鼠标查看动画效果 / 向下滚动查看视差效果</p>
+    </div>
+  </header>
+
+  <main style="min-height: 200vh; padding: 60px 0;">
+    <div class="container">
+      <div class="glass-card" style="max-width: 800px; margin: 0 auto; padding: 40px;">
+        <h2>动画效果检查清单</h2>
+
+        <div style="margin: 30px 0;">
+          <h3>✨ 应该看到的效果：</h3>
+          <ul style="line-height: 1.8;">
+            <li>✅ 顶部区域有红色边框（用于调试）</li>
+            <li>✅ 背景图片可见</li>
+            <li>✅ 鼠标在顶部移动时，背景和文字会轻微偏移</li>
+            <li>✅ 向下滚动时，背景图片会向下移动（视差效果）</li>
+            <li>✅ 可以看到飘动的粒子（白色/金色小点）</li>
+          </ul>
+        </div>
+
+        <div style="margin: 30px 0;">
+          <h3>🐛 如果看不到效果，请检查：</h3>
+          <ol style="line-height: 1.8;">
+            <li>打开浏览器控制台（F12），查看是否有 JavaScript 错误</li>
+            <li>确认 <code>main.js</code> 已加载（Network 标签页）</li>
+            <li>硬刷新页面（Ctrl + Shift + R 或 Cmd + Shift + R）</li>
+            <li>检查是否开启了"减少动画"设置</li>
+          </ol>
+        </div>
+
+        <div style="margin: 30px 0; padding: 20px; background: #f0f9ff; border-radius: 8px;">
+          <h3>🔍 调试信息</h3>
+          <p>打开浏览器控制台，输入以下命令测试：</p>
+          <pre style="background: #1e293b; color: #e2e8f0; padding: 16px; border-radius: 4px; overflow-x: auto;">
+// 检查函数是否存在
+document.querySelectorAll('.page-header-with-bg').length
+
+// 检查粒子 canvas 是否创建
+document.querySelectorAll('.page-header-particles').length
+
+// 检查背景图片元素
+document.querySelector('.page-header-bg-image')
+          </pre>
+        </div>
+
+        <div style="height: 100vh; display: flex; align-items: center; justify-content: center; font-size: 48px; opacity: 0.3;">
+          ⬇️ 继续向下滚动测试视差效果 ⬇️
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // 额外的调试信息
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        const headers = document.querySelectorAll('.page-header-with-bg');
+        const particles = document.querySelectorAll('.page-header-particles');
+
+        console.log('=== 动画调试信息 ===');
+        console.log('找到的 header 元素:', headers.length);
+        console.log('创建的 canvas 元素:', particles.length);
+        console.log('main.js 已加载');
+
+        if (headers.length === 0) {
+          console.error('❌ 未找到 .page-header-with-bg 元素');
+        }
+        if (particles.length === 0) {
+          console.warn('⚠️ 未创建 canvas 粒子元素');
+        }
+
+        // 显示在页面上
+        const debugDiv = document.createElement('div');
+        debugDiv.className = 'debug-info';
+        debugDiv.innerHTML = `
+          <strong>调试信息：</strong><br>
+          Headers: ${headers.length}<br>
+          Particles: ${particles.length}<br>
+          JS Loaded: ✅<br>
+          <br>
+          移动鼠标测试
+        `;
+        document.body.appendChild(debugDiv);
+      }, 500);
+    });
+  </script>
+</body>
+</html>

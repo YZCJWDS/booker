@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="文章列表 - 技术笔记与生活记录">
+  <title>文章 | Odile's Lab</title>
+  
+  <link rel="icon" href="./tx/1.jpg" type="image/jpeg">
+  <link rel="apple-touch-icon" href="./tx/1.jpg">
+  <link rel="stylesheet" href="./assets/css/modern.css">
+  <link rel="stylesheet" href="./assets/config/backgrounds.css">
+  <script src="./assets/js/main.js" defer></script>
+
+</head>
+<body data-page="posts">
+  <div class="bg-mesh"></div>
+
+  <div class="nav-wrapper">
+    <nav class="nav">
+      <a class="brand" href="./index.html">
+        <div class="brand-icon"><img src="./tx/1.jpg" alt="" decoding="async"></div>
+        <span>Odile's Lab</span>
+      </a>
+      <div class="nav-links">
+        <a href="./index.html" data-nav="home">首页</a>
+        <a href="./posts.html" data-nav="articles">文章</a>
+        <a href="./gallery.html" data-nav="gallery">相册</a>
+        <a href="./projects.html" data-nav="projects">项目</a>
+        <a href="./about.html" data-nav="about">关于</a>
+        <a href="https://github.com/YZCJWDS?tab=repositories" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </div>
+    </nav>
+  </div>
+
+  <header class="page-header-with-bg">
+    <div class="page-header-bg-image">
+      <picture>
+        <source srcset="./pictures/bg-posts.png" type="image/png">
+        <img src="./pictures/bg-posts.png" alt="" loading="lazy" decoding="async">
+      </picture>
+    </div>
+    <div class="page-header-overlay"></div>
+    <div class="container page-header-content">
+      <div class="hero-badge">
+        <span class="hero-badge-icon">📝</span>
+        <span>Articles</span>
+      </div>
+      <h1>技术笔记与生活记录</h1>
+      <p>记录技术学习、项目经验与日常思考</p>
+    </div>
+  </header>
+
+  <main class="page-main">
+    <div class="container page-content">
+
+      <div class="page-grid page-grid-posts">
+        <a href="./posts/vps-oracle-singbox.html" class="glass-card card-link">
+          <div class="card-meta-row">
+            <span class="tag-pill">VPS</span>
+            <span class="meta-date">2026-06-05</span>
+          </div>
+          <h2 class="card-title-sm">Oracle VPS 部署笔记</h2>
+          <p class="card-copy">从静态博客目录、Nginx 配置到 VPS 安全习惯，整理个人实验服务器的部署流程。</p>
+        </a>
+
+        <a href="./posts/computer-vision-gaze.html" class="glass-card card-link">
+          <div class="card-meta-row">
+            <span class="tag-pill tag-success">CV</span>
+            <span class="meta-date">2026-06-04</span>
+          </div>
+          <h2 class="card-title-sm">Gaze 信息在动作识别中的作用</h2>
+          <p class="card-copy">眼动信息如何作为注意先验、目标线索和行为意图补充。</p>
+        </a>
+
+        <a href="./posts/thesis-defense.html" class="glass-card card-link">
+          <div class="card-meta-row">
+            <span class="tag-pill tag-secondary">论文</span>
+            <span class="meta-date">2026-06-03</span>
+          </div>
+          <h2 class="card-title-sm">毕业论文答辩准备记录</h2>
+          <p class="card-copy">PPT 叙事结构、常见问题准备与现场表达复盘。</p>
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <footer class="page-footer page-footer-compact">
+    <div class="container">
+      <p>© <span data-year></span> Odile's Lab</p>
+    </div>
+  </footer>
+</body>
+</html>
