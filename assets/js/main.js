@@ -413,18 +413,18 @@
 
       const getActiveSkin = () => document.body.dataset.bgSkin || "snow";
 
-      const isMeteorSkin = () => activeSkin === "meteor" || activeSkin === "aurora";
+      const isAuroraSkin = () => activeSkin === "aurora";
 
       const pickParticleCount = () => {
         const base = Number.parseInt(getComputedStyle(hero).getPropertyValue("--particle-count"), 10) || 34;
         const mobileRatio = window.innerWidth < 760 ? 0.44 : 1;
         const coreRatio = navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4 ? 0.68 : 1;
-        const skinRatio = isMeteorSkin() ? 1.18 : 1;
+        const skinRatio = isAuroraSkin() ? 1.18 : 1;
         return Math.max(10, Math.round(base * mobileRatio * coreRatio * skinRatio));
       };
 
       const createParticle = (insideViewport = false) => {
-        if (isMeteorSkin()) {
+        if (isAuroraSkin()) {
           const roll = Math.random();
           const type = roll > 0.93 ? "glint" : roll > 0.7 ? "star" : "ribbon";
           const colors = ["#83f4da", "#a9c9ff", "#ffd28f", "#f4fbff"];
@@ -479,7 +479,7 @@
       };
 
       const drawParticle = (particle) => {
-        if (isMeteorSkin()) {
+        if (isAuroraSkin()) {
           const pulse = 0.74 + Math.sin(particle.drift * 1.8 + particle.phase) * 0.26;
 
           context.save();
@@ -535,8 +535,8 @@
         context.fill();
       };
 
-      const drawMeteorSky = () => {
-        if (!isMeteorSkin()) return;
+      const drawAuroraVeil = () => {
+        if (!isAuroraSkin()) return;
 
         const time = performance.now() * 0.00024;
         context.save();
@@ -573,7 +573,7 @@
       };
 
       const drawConstellationLinks = () => {
-        if (!isMeteorSkin()) return;
+        if (!isAuroraSkin()) return;
 
         const stars = particles.filter((particle) => particle.type !== "ribbon");
         context.save();
@@ -616,7 +616,7 @@
       };
 
       const drawMeteors = () => {
-        if (!isMeteorSkin()) return;
+        if (!isAuroraSkin()) return;
 
         if (meteors.length < 2 && Math.random() < 0.008) {
           meteors.push(createMeteor());
@@ -659,7 +659,7 @@
       };
 
       const updateParticle = (particle, index) => {
-        if (isMeteorSkin()) {
+        if (isAuroraSkin()) {
           particle.drift += particle.type === "ribbon" ? 0.014 : 0.022;
           particle.x += particle.speedX + Math.sin(particle.drift) * 0.12;
           particle.y += particle.speedY + Math.cos(particle.drift * 0.7) * 0.08;
@@ -692,7 +692,7 @@
       const tick = () => {
         refreshParticlesForSkin();
         context.clearRect(0, 0, width, height);
-        drawMeteorSky();
+        drawAuroraVeil();
 
         particles.forEach((particle, index) => {
           updateParticle(particle, index);
@@ -1192,9 +1192,9 @@
     if (document.querySelector("[data-ambient-panel]")) return;
 
     const STORAGE_KEY = "odile-bg-preferences";
-    const PREFERENCES_VERSION = 3;
-    const DEFAULT_SKIN = "snow";
-    const VALID_SKINS = new Set(["snow", "meteor", "film", "dark", "midnight", "noir"]);
+    const PREFERENCES_VERSION = 2;
+    const DEFAULT_SKIN = "aurora";
+    const VALID_SKINS = new Set(["aurora", "snow", "film", "dark", "midnight", "noir"]);
     const VALID_THEMES = new Set(["morning", "day", "dusk", "night"]);
 
     const readPreferences = () => {
@@ -1223,7 +1223,9 @@
     };
 
     const normalizeSkinPreference = (preferences = {}) => {
-      if (preferences.skin === "aurora") return "meteor";
+      if (preferences.skin === "snow" && preferences.version !== PREFERENCES_VERSION) {
+        return DEFAULT_SKIN;
+      }
 
       return VALID_SKINS.has(preferences.skin) ? preferences.skin : DEFAULT_SKIN;
     };
@@ -1252,10 +1254,10 @@
           </div>
         </div>
         <div class="ambient-group">
-          <div class="ambient-title">主题</div>
+          <div class="ambient-title">风格</div>
           <div class="ambient-options">
+            <button class="ambient-chip" type="button" data-bg-skin="aurora">极光</button>
             <button class="ambient-chip" type="button" data-bg-skin="snow">雪夜</button>
-            <button class="ambient-chip" type="button" data-bg-skin="meteor">流星</button>
             <button class="ambient-chip" type="button" data-bg-skin="film">胶片</button>
             <button class="ambient-chip" type="button" data-bg-skin="dark">深海</button>
             <button class="ambient-chip" type="button" data-bg-skin="midnight">星幕</button>
