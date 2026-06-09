@@ -296,7 +296,9 @@ if ($SetupServer) {
     $shouldSetupServer = $false
 } elseif ($saved -and $null -ne $saved.SetupServer) {
     $shouldSetupServer = [bool]$saved.SetupServer
-    $shouldSetupServer = Confirm-YesNo "Initialize/update Nginx on VPS" $shouldSetupServer
+    if (-not $Yes) {
+        $shouldSetupServer = Confirm-YesNo "Initialize/update Nginx on VPS" $shouldSetupServer
+    }
 } else {
     $shouldSetupServer = Confirm-YesNo "Initialize/update Nginx on VPS" $true
 }
