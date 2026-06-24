@@ -6,6 +6,21 @@
     });
   };
 
+  const ensureVisitorNavLink = () => {
+    document.querySelectorAll(".nav-links").forEach((nav) => {
+      if (nav.querySelector('[data-nav="visitor"]')) return;
+
+      const link = document.createElement("a");
+      const inPost = window.location.pathname.replace(/\\/g, "/").includes("/posts/");
+      link.href = inPost ? "../visitor.html" : "./visitor.html";
+      link.dataset.nav = "visitor";
+      link.textContent = "访客";
+
+      const githubLink = Array.from(nav.querySelectorAll("a")).find((item) => /github/i.test(item.textContent || item.href));
+      nav.insertBefore(link, githubLink || null);
+    });
+  };
+
   const highlightCurrentNav = () => {
     const path = window.location.pathname.replace(/\\/g, "/");
     const file = path.split("/").pop() || "index.html";
@@ -13,6 +28,8 @@
 
     if (path.includes("/posts/") || file === "posts.html") {
       current = "articles";
+    } else if (file === "visitor.html" || file === "visitor-records.html") {
+      current = "visitor";
     }
 
     document.querySelectorAll("[data-nav]").forEach((link) => {
@@ -23,6 +40,47 @@
       } else {
         link.removeAttribute("aria-current");
       }
+    });
+  };
+
+  const setupVisitorTracking = () => {
+    if (document.body.dataset.page === "visitor" || document.body.dataset.page === "visitor-records") return;
+    if (!window.fetch) return;
+
+    const getSessionId = () => {
+      const key = "bookerVisitorSessionId";
+      try {
+        let value = window.localStorage.getItem(key);
+        if (!value) {
+          value = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+          window.localStorage.setItem(key, value);
+        }
+        return value;
+      } catch {
+        return "";
+      }
+    };
+
+    const payload = {
+      path: `${window.location.pathname}${window.location.search}`,
+      title: document.title,
+      referrer: document.referrer,
+      language: navigator.language,
+      screen: window.screen ? `${window.screen.width}x${window.screen.height}` : "",
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      sessionId: getSessionId()
+    };
+
+    window.fetch("/api/visit", {
+      method: "POST",
+      credentials: "same-origin",
+      keepalive: true,
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    }).catch(() => {
+      // Static previews can run without the visitor API.
     });
   };
 
@@ -918,6 +976,10 @@
 
         const stat = entry.target;
         const target = Number.parseInt(stat.dataset.stat, 10);
+        if (!Number.isFinite(target)) {
+          observer.unobserve(stat);
+          return;
+        }
         let current = 0;
         const increment = Math.max(1, target / 48);
         const timer = window.setInterval(() => {
@@ -2676,7 +2738,1436 @@
     saveCurrentPreferences();
   };
 
+  const setupAssistant = () => {
+    const inPost = window.location.pathname.replace(/\\/g, "/").includes("/posts/");
+    const prefix = inPost ? "../" : "./";
+    const STORE_KEY = "bookerAssistantRoundCard";
+
+    const getHour = () => new Date().getHours();
+
+    const TIME_GREETINGS = {
+      morning: [
+        "早安~ 新的一天从这里开始吧！",
+        "清晨的阳光很好，适合读点东西。",
+        "早起的你真棒，来杯咖啡吧~"
+      ],
+      afternoon: [
+        "下午好~ 午后适合慢慢浏览。",
+        "阳光正暖，随便逛逛吧。",
+        "下午茶时间，歇一歇~"
+      ],
+      evening: [
+        "晚上好~ 夜晚适合安静地阅读。",
+        "忙了一天辛苦啦，放松一下吧。",
+        "夜色很美，陪你待一会儿~"
+      ],
+      night: [
+        "夜深了，还没休息吗？",
+        "熬夜伤身体哦，看完这篇就早点睡吧~",
+        "深夜的灵感格外珍贵，记下来~"
+      ]
+    };
+
+    const getTimeGreeting = () => {
+      const h = getHour();
+      if (h >= 6 && h < 12) return pickRandom(TIME_GREETINGS.morning);
+      if (h >= 12 && h < 18) return pickRandom(TIME_GREETINGS.afternoon);
+      if (h >= 18 && h < 23) return pickRandom(TIME_GREETINGS.evening);
+      return pickRandom(TIME_GREETINGS.night);
+    };
+
+    const PAGE_CONTEXT = {
+      home: [
+        "这里是首页，可以看看最新文章~",
+        "试试点击角色，会有彩蛋哦！",
+        "右下角可以切换主题氛围~"
+      ],
+      articles: [
+        "文章列表在这里，可以按标签筛选~",
+        "搜索功能很方便，试试关键词~",
+        "每篇文章都有目录导航哦~"
+      ],
+      gallery: [
+        "相册记录了日常的美好瞬间~",
+        "点击图片可以放大查看~",
+        "这些照片都是生活里的小确幸。"
+      ],
+      projects: [
+        "这里是项目展示区~",
+        "每个项目都是认真做的成果！",
+        "感兴趣可以去 GitHub 看看源码~"
+      ],
+      about: [
+        "这是关于站长的介绍页~",
+        "想了解更多可以看看这里。",
+        "有合作想法欢迎联系~"
+      ]
+    };
+
+    const IDLE_LINES = [
+      "霜色正好，适合写一点长久的东西。",
+      "新的灵感来了，要不要先记下来？",
+      "火光很小也够暖，雪夜里尤其如此。",
+      "别急，先把今天这一页写漂亮。",
+      "抬头看看天空，或许会有流星哦。",
+      "代码和诗都需要耐心~",
+      "今天的你也很努力呢！",
+      "偶尔偷懒也是可以的啦~",
+      "喝口水吧，保持好状态~",
+      "窗外的风景也很不错哦。"
+    ];
+
+    const TIPS = [
+      "试试右下角的主题切换面板，可以换肤哦~",
+      "首页的角色点击可以触发台词！",
+      "切换不同的氛围场景，体验不同的视觉效果~",
+      "文章页面有阅读进度条和目录导航~",
+      "相册页面可以浏览日常照片记录~",
+      "你可以拖动我到任何位置哦~",
+      "双击我的头像可以切换表情！"
+    ];
+
+    const EXPRESSIONS = ["default", "happy", "thinking", "sleeping"];
+
+    const currentPage = document.body.dataset.page || "home";
+
+    const ACTIONS = [
+      { label: "最新文章", icon: "📖", href: `${prefix}posts/computer-vision-gaze.html` },
+      { label: "看看项目", icon: "🔬", href: `${prefix}projects.html` },
+      { label: "逛逛相册", icon: "📷", href: `${prefix}gallery.html` },
+      { label: "小贴士", icon: "💡", action: "tip" },
+      { label: "换个话题", icon: "💬", action: "chat" },
+      { label: "页面导航", icon: "🧭", action: "context" },
+      { label: "戳一戳", icon: "👆", action: "poke" }
+    ];
+
+    const readStore = () => {
+      try {
+        return JSON.parse(window.localStorage.getItem(STORE_KEY)) || {};
+      } catch { return {}; }
+    };
+
+    const writeStore = (patch) => {
+      try {
+        const data = Object.assign(readStore(), patch);
+        window.localStorage.setItem(STORE_KEY, JSON.stringify(data));
+      } catch {}
+    };
+
+    const widget = document.createElement("div");
+    widget.className = "assistant-widget";
+    widget.innerHTML = `
+      <div class="assistant-bubble" data-assistant-bubble></div>
+      <div class="assistant-panel" data-assistant-panel>
+        <div class="assistant-panel-header">
+          <img src="${prefix}pictures/character-guqinghan-hutao.webp" alt="">
+          <div class="assistant-panel-header-info">
+            <strong>清寒 & 胡桃</strong>
+            <span data-assistant-status-text>小助手在线中~</span>
+          </div>
+          <button class="assistant-panel-close" data-assistant-close aria-label="关闭面板">&times;</button>
+        </div>
+        <div class="assistant-panel-messages" data-assistant-messages></div>
+        <div class="assistant-panel-actions" data-assistant-actions></div>
+      </div>
+      <button class="assistant-avatar" data-assistant-toggle aria-label="打开小助手">
+        <img src="${prefix}pictures/character-guqinghan-hutao.webp" alt="小助手">
+        <span class="assistant-expression" data-assistant-expr></span>
+        <span class="assistant-status"></span>
+      </button>
+    `;
+
+    document.body.appendChild(widget);
+
+    const bubble = widget.querySelector("[data-assistant-bubble]");
+    const panel = widget.querySelector("[data-assistant-panel]");
+    const messages = widget.querySelector("[data-assistant-messages]");
+    const actionsContainer = widget.querySelector("[data-assistant-actions]");
+    const toggleBtn = widget.querySelector("[data-assistant-toggle]");
+    const closeBtn = widget.querySelector("[data-assistant-close]");
+    const exprEl = widget.querySelector("[data-assistant-expr]");
+    const statusText = widget.querySelector("[data-assistant-status-text]");
+
+    let panelOpen = false;
+    let bubbleTimer = 0;
+    let idleTimer = 0;
+    let pokeCount = 0;
+    let currentExpr = "default";
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let dragThreshold = false;
+
+    const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+    const setExpression = (expr) => {
+      currentExpr = expr;
+      exprEl.dataset.expr = expr;
+      widget.dataset.expr = expr;
+    };
+
+    const showBubble = (text, duration = 5000) => {
+      if (panelOpen) return;
+      bubble.textContent = text;
+      bubble.classList.add("is-visible");
+      window.clearTimeout(bubbleTimer);
+      bubbleTimer = window.setTimeout(() => {
+        bubble.classList.remove("is-visible");
+      }, duration);
+    };
+
+    const hideBubble = () => {
+      bubble.classList.remove("is-visible");
+      window.clearTimeout(bubbleTimer);
+    };
+
+    const showTyping = () => {
+      const indicator = document.createElement("div");
+      indicator.className = "assistant-msg assistant-msg-bot assistant-typing";
+      indicator.innerHTML = '<span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span>';
+      messages.appendChild(indicator);
+      messages.scrollTop = messages.scrollHeight;
+      return indicator;
+    };
+
+    const addMessage = (text, type = "bot", delay = 0) => {
+      if (type === "bot" && delay > 0) {
+        setExpression("thinking");
+        const typing = showTyping();
+        window.setTimeout(() => {
+          typing.remove();
+          const msg = document.createElement("div");
+          msg.className = `assistant-msg assistant-msg-${type}`;
+          msg.textContent = text;
+          messages.appendChild(msg);
+          messages.scrollTop = messages.scrollHeight;
+          setExpression("happy");
+          window.setTimeout(() => setExpression("default"), 2000);
+        }, delay);
+      } else {
+        const msg = document.createElement("div");
+        msg.className = `assistant-msg assistant-msg-${type}`;
+        msg.textContent = text;
+        messages.appendChild(msg);
+        messages.scrollTop = messages.scrollHeight;
+      }
+    };
+
+    const openPanel = () => {
+      panelOpen = true;
+      hideBubble();
+      panel.classList.add("is-open");
+      setExpression("happy");
+
+      if (messages.children.length === 0) {
+        addMessage(getTimeGreeting());
+      }
+
+      window.setTimeout(() => setExpression("default"), 2500);
+    };
+
+    const closePanel = () => {
+      panelOpen = false;
+      panel.classList.remove("is-open");
+    };
+
+    const renderActions = () => {
+      actionsContainer.innerHTML = "";
+      ACTIONS.forEach((item) => {
+        const btn = document.createElement("button");
+        btn.className = "assistant-action-btn";
+        btn.innerHTML = `<span class="action-icon">${item.icon}</span>${item.label}`;
+
+        if (item.href) {
+          btn.addEventListener("click", () => {
+            window.location.href = item.href;
+          });
+        } else if (item.action === "tip") {
+          btn.addEventListener("click", () => {
+            addMessage(item.label, "user");
+            addMessage(pickRandom(TIPS), "bot", 600);
+          });
+        } else if (item.action === "chat") {
+          btn.addEventListener("click", () => {
+            addMessage(item.label, "user");
+            addMessage(pickRandom(IDLE_LINES), "bot", 800);
+          });
+        } else if (item.action === "context") {
+          btn.addEventListener("click", () => {
+            addMessage(item.label, "user");
+            const lines = PAGE_CONTEXT[currentPage] || PAGE_CONTEXT.home;
+            addMessage(pickRandom(lines), "bot", 600);
+          });
+        } else if (item.action === "poke") {
+          btn.addEventListener("click", () => {
+            pokeCount++;
+            addMessage("戳一戳~", "user");
+            let response;
+            if (pokeCount <= 2) {
+              response = "哎呀~ 你戳我干嘛！";
+            } else if (pokeCount <= 5) {
+              response = "又戳！别闹啦~";
+            } else if (pokeCount <= 8) {
+              response = "你再戳我就……就生气了哦！";
+            } else {
+              response = "哼！不理你了！……好吧还是理你一下。";
+              pokeCount = 0;
+            }
+            setExpression("happy");
+            addMessage(response, "bot", 400);
+            toggleBtn.classList.add("assistant-poked");
+            window.setTimeout(() => {
+              toggleBtn.classList.remove("assistant-poked");
+            }, 600);
+          });
+        }
+
+        actionsContainer.appendChild(btn);
+      });
+    };
+
+    const startIdleBubbles = () => {
+      window.clearInterval(idleTimer);
+      idleTimer = window.setInterval(() => {
+        if (!panelOpen && Math.random() > 0.5) {
+          const h = getHour();
+          if (h >= 0 && h < 6) {
+            setExpression("sleeping");
+            showBubble("zzZ... 我也困了...", 6000);
+          } else {
+            showBubble(pickRandom(IDLE_LINES), 6000);
+          }
+        }
+      }, 30000);
+    };
+
+    const setupDrag = () => {
+      let startRight = 0;
+      let startBottom = 0;
+
+      toggleBtn.addEventListener("pointerdown", (e) => {
+        isDragging = true;
+        dragThreshold = false;
+        dragStartX = e.clientX;
+        dragStartY = e.clientY;
+        const rect = widget.getBoundingClientRect();
+        startRight = window.innerWidth - rect.right;
+        startBottom = window.innerHeight - rect.bottom;
+        toggleBtn.setPointerCapture(e.pointerId);
+      });
+
+      toggleBtn.addEventListener("pointermove", (e) => {
+        if (!isDragging) return;
+        const dx = e.clientX - dragStartX;
+        const dy = e.clientY - dragStartY;
+        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+          dragThreshold = true;
+        }
+        if (!dragThreshold) return;
+
+        const newRight = Math.max(8, Math.min(window.innerWidth - 80, startRight - dx));
+        const newBottom = Math.max(8, Math.min(window.innerHeight - 80, startBottom - dy));
+        widget.style.right = newRight + "px";
+        widget.style.bottom = newBottom + "px";
+      });
+
+      toggleBtn.addEventListener("pointerup", (e) => {
+        if (isDragging && dragThreshold) {
+          writeStore({
+            right: widget.style.right,
+            bottom: widget.style.bottom
+          });
+        }
+        isDragging = false;
+        toggleBtn.releasePointerCapture(e.pointerId);
+      });
+    };
+
+    const restorePosition = () => {
+      const saved = readStore();
+      if (saved.right) widget.style.right = saved.right;
+      if (saved.bottom) widget.style.bottom = saved.bottom;
+    };
+
+    toggleBtn.addEventListener("click", (e) => {
+      if (dragThreshold) {
+        e.preventDefault();
+        return;
+      }
+      if (panelOpen) {
+        closePanel();
+      } else {
+        openPanel();
+      }
+    });
+
+    toggleBtn.addEventListener("dblclick", () => {
+      const idx = (EXPRESSIONS.indexOf(currentExpr) + 1) % EXPRESSIONS.length;
+      setExpression(EXPRESSIONS[idx]);
+      showBubble(
+        currentExpr === "happy" ? "开心！" :
+        currentExpr === "thinking" ? "让我想想..." :
+        currentExpr === "sleeping" ? "困了zzZ..." : "嗯嗯~",
+        3000
+      );
+    });
+
+    closeBtn.addEventListener("click", closePanel);
+
+    document.addEventListener("pointerdown", (event) => {
+      if (panelOpen && !panel.contains(event.target) && !toggleBtn.contains(event.target)) {
+        closePanel();
+      }
+    }, { passive: true });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && panelOpen) {
+        closePanel();
+      }
+    });
+
+    const updateStatusByTime = () => {
+      const h = getHour();
+      if (h >= 0 && h < 6) {
+        statusText.textContent = "深夜陪伴中...";
+      } else if (h >= 6 && h < 12) {
+        statusText.textContent = "早安~ 在线中";
+      } else if (h >= 12 && h < 18) {
+        statusText.textContent = "下午好~ 在线中";
+      } else {
+        statusText.textContent = "晚上好~ 在线中";
+      }
+    };
+
+    renderActions();
+    restorePosition();
+    setupDrag();
+    updateStatusByTime();
+
+    window.setTimeout(() => {
+      showBubble(getTimeGreeting(), 6000);
+    }, 3000);
+
+    startIdleBubbles();
+  };
+
+  const setupLive2DChar = () => {
+    const inPost = window.location.pathname.replace(/\\/g, "/").includes("/posts/");
+    const prefix = inPost ? "../" : "./";
+    const encodeAssetName = (file) => file.split("/").map((part) => encodeURIComponent(part)).join("/");
+    const mascotAsset = (baseDir, file, transparent = true) => `${prefix}assets/mascot/${baseDir}/${transparent ? "transparent/" : ""}${encodeAssetName(file)}`;
+    const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+    const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+    const getHour = () => new Date().getHours();
+    const registry = new Map();
+    let frostTimer = 0;
+    let charmTimer = 0;
+    let duoTimer = 0;
+    let hutaoLinkTimer = 0;
+
+    // ─────────────────────────────────────────────────────────────
+    // Four-phase Gu Qinghan full-screen freeze ultimate:
+    //  ① cast flash + central shockwave + bloom burst      (~0–1.5s)
+    //  ② ice sheet / frozen pane / cold wash spread outward (~0.5–3s)
+    // ③ frozen hold: edge frost, vignette, frame, glass lock solid (~2–5s)
+    //  ④ shatter fade: cracks, shards, snowflakes, dust dissolve (~5–6.9s)
+    // The frost core is anchored to Qinghan's feet (--freeze-origin-x/y);
+    // small scattered accents (snowflakes, frost flowers, ice dust, branch
+    // cracks, shards) are spread across the rest of the screen for texture.
+    // Effect layer z-index 96 sits above mascots (95/94); all layers are
+    // semi-transparent so the character silhouette stays readable.
+    // ─────────────────────────────────────────────────────────────
+    const castFreezeScreen = (originApi) => {
+      const existing = document.querySelector(".freeze-screen-effect");
+      if (existing) existing.remove();
+      window.clearTimeout(frostTimer);
+
+      // Main frost core origin = Qinghan's feet. Falls back to her default spot.
+      const rect = originApi?.container?.getBoundingClientRect();
+      const originX = rect ? rect.left + rect.width * 0.5 : Math.min(window.innerWidth * 0.11, 150);
+      const originY = rect ? rect.bottom - rect.height * 0.08 : window.innerHeight - 90;
+
+      // Branching ice cracks — thin fractures spreading inward from every edge.
+      const branchCracks = [
+        [0, 14, 42, 158, 0.0],
+        [100, 22, 38, 202, 0.12],
+        [0, 40, 36, 172, 0.22],
+        [100, 48, 34, 196, 0.34],
+        [0, 68, 40, 164, 0.46],
+        [100, 76, 36, 208, 0.58],
+        [22, 0, 30, 86, 0.30],
+        [62, 0, 28, 94, 0.42],
+        [28, 100, 32, 264, 0.50],
+        [66, 100, 30, 256, 0.62]
+      ].map(([x, y, w, rot, delay]) => (
+        `<span class="freeze-branch-crack" style="--branch-x:${x}%;--branch-y:${y}%;--branch-width:${w}%;--branch-rotate:${rot}deg;--branch-delay:${delay}s;"></span>`
+      )).join("");
+
+      // Scattered snowflakes drifting down across the whole screen.
+      const snowflakes = Array.from({ length: 16 }, (_, i) => {
+        const x = 5 + ((i * 67) % 91);
+        const y = 6 + ((i * 41) % 82);
+        const start = 0.3 + ((i * 7) % 10) / 22;
+        const size = 0.55 + ((i * 11) % 9) / 15;
+        const spin = ((i * 53) % 360) - 180;
+        const endSpin = spin + ((i % 2 ? 1 : -1) * (120 + ((i * 13) % 180)));
+        const delay = ((i * 17) % 90) / 100;
+        return `<span class="freeze-snowflake" style="--flake-x:${x}%;--flake-y:${y}%;--flake-start:${start};--flake-size:${size};--flake-spin:${spin}deg;--flake-end-spin:${endSpin}deg;--flake-delay:${delay}s;"></span>`;
+      }).join("");
+
+      // Frost flowers — elegant crystalline motifs blooming at scattered spots.
+      const frostFlowers = [
+        [12, 30, 0.7, -14, 0.10],
+        [84, 22, 0.58, 22, 0.26],
+        [22, 72, 0.64, 8, 0.38],
+        [72, 64, 0.52, -28, 0.50],
+        [48, 16, 0.46, 16, 0.62],
+        [38, 88, 0.6, -10, 0.74],
+        [90, 80, 0.5, 30, 0.86],
+        [8, 56, 0.56, -20, 0.96]
+      ].map(([x, y, size, rot, delay]) => (
+        `<span class="freeze-frost-flower" style="--flower-x:${x}%;--flower-y:${y}%;--flower-size:${size};--flower-rotate:${rot}deg;--flower-delay:${delay}s;"></span>`
+      )).join("");
+
+      // Tiny ice dust motes — the smallest scattered sparkle layer.
+      const dust = Array.from({ length: 32 }, (_, i) => {
+        const x = 3 + ((i * 97) % 95);
+        const y = 4 + ((i * 61) % 92);
+        const start = 0.2 + ((i * 5) % 8) / 12;
+        const size = 0.4 + ((i * 9) % 10) / 14;
+        const drift = (i % 2 ? 1 : -1) * (8 + ((i * 7) % 36));
+        const lift = -(14 + ((i * 13) % 48));
+        const delay = ((i * 23) % 110) / 100;
+        return `<span class="freeze-dust" style="--dust-x:${x}%;--dust-y:${y}%;--dust-start:${start};--dust-size:${size};--dust-drift:${drift}px;--dust-lift:${lift}px;--dust-delay:${delay}s;"></span>`;
+      }).join("");
+
+      const layer = document.createElement("div");
+      layer.className = "freeze-screen-effect";
+      layer.setAttribute("aria-hidden", "true");
+      layer.style.setProperty("--freeze-origin-x", `${Math.round(originX)}px`);
+      layer.style.setProperty("--freeze-origin-y", `${Math.round(originY)}px`);
+      layer.innerHTML = `
+        <span class="freeze-flash"></span>
+        <span class="freeze-cold-wash"></span>
+        <span class="freeze-bloom"></span>
+        <span class="freeze-impact-wave"></span>
+        <span class="freeze-wave"></span>
+        <span class="freeze-sigil"></span>
+        <span class="freeze-ice-sheet"></span>
+        <span class="freeze-ice-sheet freeze-ice-sheet-deep"></span>
+        <span class="freeze-ice-veil"></span>
+        <span class="freeze-frozen-pane"></span>
+        <span class="freeze-mist"></span>
+        <span class="freeze-snowfield"></span>
+        <span class="freeze-glass"></span>
+        <span class="freeze-rime"></span>
+        <span class="freeze-vignette"></span>
+        <span class="freeze-frost-frame"></span>
+        <span class="freeze-frost-frame freeze-frost-frame-deep"></span>
+        <span class="freeze-frost-bloom freeze-frost-bloom-left"></span>
+        <span class="freeze-frost-bloom freeze-frost-bloom-right"></span>
+        <span class="freeze-frost-bloom freeze-frost-bloom-bottom"></span>
+        ${branchCracks}
+        <span class="freeze-crack freeze-crack-one"></span>
+        <span class="freeze-crack freeze-crack-two"></span>
+        <span class="freeze-crack freeze-crack-three"></span>
+        <span class="freeze-crack freeze-crack-four"></span>
+        <span class="freeze-crack freeze-crack-five"></span>
+        <span class="freeze-crack freeze-crack-six"></span>
+        <span class="freeze-crack freeze-crack-seven"></span>
+        <span class="freeze-crack freeze-crack-eight"></span>
+        <span class="freeze-crack freeze-crack-nine"></span>
+        <span class="freeze-crack freeze-crack-ten"></span>
+        <span class="freeze-shard freeze-shard-one"></span>
+        <span class="freeze-shard freeze-shard-two"></span>
+        <span class="freeze-shard freeze-shard-three"></span>
+        <span class="freeze-shard freeze-shard-four"></span>
+        <span class="freeze-shard freeze-shard-five"></span>
+        <span class="freeze-shard freeze-shard-six"></span>
+        <span class="freeze-shard freeze-shard-seven"></span>
+        <span class="freeze-shard freeze-shard-eight"></span>
+        ${snowflakes}
+        ${frostFlowers}
+        ${dust}
+      `;
+      document.body.appendChild(layer);
+
+      // AI-generated full-screen VFX image layers (black-bg PNGs, screen-blended).
+      // These provide the high-fidelity frost / crack / shatter texture that pure
+      // CSS gradients cannot match; the CSS layers above add dynamic light & sigil.
+      const vfxBase = `${prefix}assets/mascot/kbn/`;
+      const vfxLayer = document.createElement("div");
+      vfxLayer.className = "freeze-vfx-effect";
+      vfxLayer.setAttribute("aria-hidden", "true");
+      vfxLayer.innerHTML = `
+        <span class="freeze-vfx-layer freeze-vfx-wave" style="background-image:url('${vfxBase}freeze-vfx-wave.png')"></span>
+        <span class="freeze-vfx-layer freeze-vfx-locked" style="background-image:url('${vfxBase}freeze-vfx-locked.png')"></span>
+        <span class="freeze-vfx-layer freeze-vfx-shatter" style="background-image:url('${vfxBase}freeze-vfx-shatter.png')"></span>
+      `;
+      document.body.appendChild(vfxLayer);
+
+      document.body.classList.add("is-screen-freezing");
+      window.requestAnimationFrame(() => layer.classList.add("is-casting"));
+      frostTimer = window.setTimeout(() => {
+        layer.classList.add("is-fading");
+        vfxLayer.classList.add("is-fading");
+        document.body.classList.remove("is-screen-freezing");
+        window.setTimeout(() => {
+          layer.remove();
+          vfxLayer.remove();
+        }, 1500);
+      }, 5400);
+    };
+
+    const castFreezeScreenVfx = (originApi) => {
+      document.querySelectorAll(".freeze-screen-effect, .freeze-vfx-effect").forEach((effect) => effect.remove());
+      window.clearTimeout(frostTimer);
+
+      const rect = originApi?.container?.getBoundingClientRect();
+      const originX = rect ? rect.left + rect.width * 0.5 : Math.min(window.innerWidth * 0.11, 150);
+      const originY = rect ? rect.bottom - rect.height * 0.08 : window.innerHeight - 90;
+      const vfxBase = `${prefix}assets/mascot/kbn/`;
+
+      const layer = document.createElement("div");
+      layer.className = "freeze-screen-effect freeze-screen-effect-vfx";
+      layer.setAttribute("aria-hidden", "true");
+      layer.style.setProperty("--freeze-origin-x", `${Math.round(originX)}px`);
+      layer.style.setProperty("--freeze-origin-y", `${Math.round(originY)}px`);
+      layer.innerHTML = `
+        <span class="freeze-vfx-cold-tint"></span>
+        <span class="freeze-vfx-layer freeze-vfx-wave" style="background-image:url('${vfxBase}freeze-vfx-wave-clean.png')"></span>
+        <span class="freeze-vfx-layer freeze-vfx-locked" style="background-image:url('${vfxBase}freeze-vfx-locked-clean.png')"></span>
+        <span class="freeze-vfx-layer freeze-vfx-shatter" style="background-image:url('${vfxBase}freeze-vfx-shatter-clean.png')"></span>
+      `;
+      document.body.appendChild(layer);
+
+      document.body.classList.add("is-screen-freezing");
+      window.requestAnimationFrame(() => layer.classList.add("is-casting"));
+      frostTimer = window.setTimeout(() => {
+        layer.classList.add("is-fading");
+        document.body.classList.remove("is-screen-freezing");
+        window.setTimeout(() => layer.remove(), 1500);
+      }, 6800);
+    };
+
+    const castHutaoCharmEffect = (originApi) => {
+      const existing = document.querySelector(".hutao-charm-effect");
+      if (existing) existing.remove();
+      window.clearTimeout(charmTimer);
+      document.body.classList.remove("is-hutao-blessing");
+
+      const rect = originApi?.container?.getBoundingClientRect();
+      const originX = rect ? rect.left + rect.width * 0.52 : Math.min(window.innerWidth * 0.24, 360);
+      const originY = rect ? rect.top + rect.height * 0.62 : window.innerHeight - 132;
+      const petals = [
+        [6, -8, 0.62, 0.05, 34, 92],
+        [12, 16, 0.42, 0.24, -26, 78],
+        [18, -16, 0.7, 0.12, 48, 112],
+        [24, 24, 0.52, 0.36, -42, 88],
+        [31, 4, 0.58, 0.18, 18, 126],
+        [38, -18, 0.48, 0.44, -54, 96],
+        [45, 18, 0.66, 0.28, 62, 118],
+        [52, -10, 0.44, 0.52, -18, 82],
+        [59, 22, 0.72, 0.2, 38, 132],
+        [66, 0, 0.5, 0.4, -36, 92],
+        [73, -20, 0.64, 0.08, 54, 124],
+        [80, 14, 0.46, 0.48, -48, 86],
+        [87, -6, 0.68, 0.3, 24, 112],
+        [94, 20, 0.54, 0.58, -32, 96],
+        [9, 42, 0.46, 0.62, 28, 76],
+        [21, 58, 0.7, 0.72, -54, 108],
+        [34, 48, 0.5, 0.68, 44, 84],
+        [48, 64, 0.62, 0.78, -28, 116],
+        [62, 46, 0.42, 0.66, 36, 78],
+        [77, 60, 0.74, 0.74, -46, 124],
+        [91, 50, 0.56, 0.7, 18, 92],
+        [98, 72, 0.44, 0.86, -34, 82]
+      ].map(([x, y, size, delay, spin, drift]) => (
+        `<span class="hutao-domain-petal" style="--petal-left:${x}vw; --petal-top:${y}vh; --petal-width:${Math.round(18 * size)}px; --petal-height:${Math.round(27 * size)}px; --petal-delay:${delay}s; --petal-spin:${spin}deg; --petal-end-spin:${spin + 190}deg; --petal-fall-x:${Math.round(drift * -0.42)}px;"></span>`
+      )).join("");
+      const talismans = [
+        [12, 24, 0.86, 0.12, -18, 24, -46],
+        [22, 64, 0.68, 0.38, 28, -30, -58],
+        [35, 18, 0.78, 0.2, 14, 36, -40],
+        [48, 72, 0.62, 0.58, -32, -24, -52],
+        [61, 30, 0.82, 0.28, 36, 32, -62],
+        [74, 66, 0.7, 0.48, -22, -38, -48],
+        [86, 22, 0.74, 0.34, 18, 28, -54],
+        [93, 52, 0.58, 0.66, -36, -24, -44],
+        [8, 76, 0.56, 0.76, 32, 18, -38],
+        [57, 10, 0.52, 0.52, -24, -20, -42]
+      ].map(([x, y, scale, delay, rotate, drift, lift]) => (
+        `<span class="hutao-domain-talisman" style="--talisman-left:${x}vw; --talisman-top:${y}vh; --talisman-scale:${scale}; --talisman-delay:${delay}s; --talisman-rotate:${rotate}deg; --talisman-drift:${drift}px; --talisman-lift:${lift}px;"></span>`
+      )).join("");
+      const sparks = Array.from({ length: 34 }, (_, index) => {
+        const x = 4 + ((index * 29) % 94);
+        const y = 18 + ((index * 17) % 74);
+        const size = 0.42 + ((index * 7) % 10) / 18;
+        const delay = ((index * 11) % 70) / 100;
+        const lift = 28 + ((index * 13) % 62);
+        const drift = ((index % 2 ? -1 : 1) * (10 + ((index * 5) % 30)));
+        return `<span class="hutao-domain-spark" style="--spark-left:${x}vw; --spark-top:${y}vh; --spark-width:${Math.round(7 * size)}px; --spark-delay:${delay.toFixed(2)}s; --spark-rise:${-lift}px; --spark-drift:${drift}px;"></span>`;
+      }).join("");
+      const bells = [
+        [14, 18, 0.18],
+        [28, 12, 0.36],
+        [43, 9, 0.24],
+        [58, 10, 0.44],
+        [73, 13, 0.3],
+        [88, 20, 0.52]
+      ].map(([x, y, delay]) => (
+        `<span class="hutao-domain-bell" style="--bell-left:${x}vw; --bell-top:${y}vh; --bell-delay:${delay}s;"></span>`
+      )).join("");
+
+      const layer = document.createElement("div");
+      layer.className = "hutao-charm-effect hutao-blessing-domain";
+      layer.setAttribute("aria-hidden", "true");
+      layer.style.setProperty("--hutao-origin-x", `${Math.round(originX)}px`);
+      layer.style.setProperty("--hutao-origin-y", `${Math.round(originY)}px`);
+      layer.innerHTML = `
+        <span class="hutao-domain-warmth"></span>
+        <span class="hutao-domain-flash"></span>
+        <span class="hutao-domain-floor"></span>
+        <span class="hutao-domain-circle"></span>
+        <span class="hutao-domain-wave"></span>
+        <span class="hutao-domain-canopy"></span>
+        <span class="hutao-domain-ribs"></span>
+        <span class="hutao-domain-trim"></span>
+        <span class="hutao-domain-cameo"></span>
+        <span class="hutao-domain-ripple hutao-domain-ripple-one"></span>
+        <span class="hutao-domain-ripple hutao-domain-ripple-two"></span>
+        <span class="hutao-domain-ripple hutao-domain-ripple-three"></span>
+        ${talismans}
+        ${petals}
+        ${bells}
+        ${sparks}
+      `;
+      document.body.appendChild(layer);
+      document.body.classList.add("is-hutao-blessing");
+      window.requestAnimationFrame(() => layer.classList.add("is-casting"));
+      charmTimer = window.setTimeout(() => {
+        layer.classList.add("is-fading");
+        document.body.classList.remove("is-hutao-blessing");
+        window.setTimeout(() => layer.remove(), 1000);
+      }, 6100);
+    };
+
+    const castHutaoLinkEffect = (originApi, targetApi) => {
+      const existing = document.querySelector(".hutao-link-effect");
+      if (existing) existing.remove();
+      window.clearTimeout(hutaoLinkTimer);
+
+      const originRect = originApi?.container?.getBoundingClientRect();
+      const targetRect = targetApi?.container?.getBoundingClientRect();
+      if (!originRect || !targetRect) return;
+
+      const sparks = Array.from({ length: 10 }, (_, i) => {
+        return `<span class="hutao-link-spark" style="--spark-x:0px;--spark-y:0px;--spark-delay:${(0.08 + i * 0.12).toFixed(3)}s;"></span>`;
+      }).join("");
+
+      const layer = document.createElement("div");
+      layer.className = "hutao-link-effect";
+      layer.setAttribute("aria-hidden", "true");
+      layer.innerHTML = `
+        <span class="hutao-link-glow"></span>
+        <span class="hutao-link-beam"></span>
+        ${sparks}
+      `;
+      document.body.appendChild(layer);
+      const sparkEls = Array.from(layer.querySelectorAll(".hutao-link-spark"));
+      let active = true;
+      let rafId = 0;
+      const updateBeam = () => {
+        if (!active || !document.body.contains(layer)) return;
+        const nextOriginRect = originApi?.container?.getBoundingClientRect();
+        const nextTargetRect = targetApi?.container?.getBoundingClientRect();
+        if (!nextOriginRect || !nextTargetRect) return;
+
+        const x1 = nextOriginRect.left + nextOriginRect.width * 0.5;
+        const y1 = nextOriginRect.top + nextOriginRect.height * 0.48;
+        const x2 = nextTargetRect.left + nextTargetRect.width * 0.54;
+        const y2 = nextTargetRect.top + nextTargetRect.height * 0.46;
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const length = Math.max(1, Math.hypot(dx, dy));
+        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+        const normal = (angle + 90) * Math.PI / 180;
+
+        layer.style.setProperty("--beam-x", `${x1}px`);
+        layer.style.setProperty("--beam-y", `${y1}px`);
+        layer.style.setProperty("--beam-length", `${length}px`);
+        layer.style.setProperty("--beam-angle", `${angle}deg`);
+        sparkEls.forEach((spark, i) => {
+          const t = (i + 1) / (sparkEls.length + 1);
+          const wiggle = Math.sin(i * 1.7 + Date.now() / 320) * 10;
+          spark.style.setProperty("--spark-x", `${x1 + dx * t + Math.cos(normal) * wiggle}px`);
+          spark.style.setProperty("--spark-y", `${y1 + dy * t + Math.sin(normal) * wiggle}px`);
+        });
+
+        rafId = window.requestAnimationFrame(updateBeam);
+      };
+      updateBeam();
+      window.requestAnimationFrame(() => layer.classList.add("is-casting"));
+      hutaoLinkTimer = window.setTimeout(() => {
+        active = false;
+        window.cancelAnimationFrame(rafId);
+        layer.classList.add("is-fading");
+        window.setTimeout(() => layer.remove(), 650);
+      }, 10000);
+    };
+
+    const castDuoEffect = () => {
+      const existing = document.querySelector(".mascot-duo-effect");
+      if (existing) existing.remove();
+      window.clearTimeout(duoTimer);
+
+      const layer = document.createElement("div");
+      layer.className = "mascot-duo-effect";
+      layer.setAttribute("aria-hidden", "true");
+      layer.innerHTML = `
+        <span class="mascot-duo-arc"></span>
+        <span class="mascot-duo-spark mascot-duo-spark-one"></span>
+        <span class="mascot-duo-spark mascot-duo-spark-two"></span>
+        <span class="mascot-duo-spark mascot-duo-spark-three"></span>
+        <span class="mascot-duo-spark mascot-duo-spark-four"></span>
+      `;
+      document.body.appendChild(layer);
+      document.body.classList.add("mascot-duo-active");
+      window.requestAnimationFrame(() => layer.classList.add("is-casting"));
+      duoTimer = window.setTimeout(() => {
+        layer.classList.add("is-fading");
+        document.body.classList.remove("mascot-duo-active");
+        window.setTimeout(() => layer.remove(), 700);
+      }, 3200);
+    };
+
+    const duoScenes = [
+      {
+        qinghan: { pose: "skill", line: "寒意先行。", duration: 3400 },
+        hutao: { pose: "skill", line: "护符跟上~", duration: 3400 }
+      },
+      {
+        qinghan: { pose: "talk", line: "胡桃，别把符贴到伞上。", duration: 3600 },
+        hutao: { pose: "thinking", line: "哎？我刚想试试。", duration: 3600 }
+      },
+      {
+        qinghan: { pose: "happy", line: "今日也要利落些。", duration: 3400 },
+        hutao: { pose: "idle", line: "放心交给本堂主！", duration: 3400 }
+      },
+      {
+        qinghan: { pose: "sleep", line: "她睡着了，我守一会儿。", duration: 3800 },
+        hutao: { pose: "sleep", line: "呼...花灯也困啦。", duration: 3800 }
+      }
+    ];
+
+    const triggerDuoInteraction = (sourceId) => {
+      const qinghan = registry.get("qinghan");
+      const hutao = registry.get("hutao");
+      const source = registry.get(sourceId);
+      if (!qinghan || !hutao) {
+        if (source) source.showSpeech("另一位搭档还没出来呢~", 2800, null);
+        return;
+      }
+
+      const scene = pickRandom(duoScenes);
+      qinghan.wake();
+      hutao.wake();
+      qinghan.container.classList.add("is-duo-casting");
+      hutao.container.classList.add("is-duo-casting");
+      qinghan.setPose(scene.qinghan.pose, { temporary: true, duration: scene.qinghan.duration });
+      hutao.setPose(scene.hutao.pose, { temporary: true, duration: scene.hutao.duration });
+      qinghan.showSpeech(scene.qinghan.line, scene.qinghan.duration, null);
+      window.setTimeout(() => hutao.showSpeech(scene.hutao.line, scene.hutao.duration, null), 360);
+      castDuoEffect();
+      window.setTimeout(() => {
+        qinghan.container.classList.remove("is-duo-casting");
+        hutao.container.classList.remove("is-duo-casting");
+      }, Math.max(scene.qinghan.duration, scene.hutao.duration));
+    };
+
+    const characters = [
+      {
+        id: "qinghan",
+        name: "顾清寒",
+        baseDir: "kbn",
+        storeKey: "bookerLive2d",
+        supportSkill: { label: "\u987e\u6e05\u5bd2F\u6280\u80fd", icon: "F" },
+        restoreIcon: "❄️",
+        skillIcon: "❄",
+        skillLabel: "冰霜技能",
+        initialPose: () => (getHour() >= 0 && getHour() < 6 ? "sleep" : "idle"),
+        hoverPose: "greet",
+        talkPose: "talk",
+        clickPose: "happy",
+        idleActionPose: "blink",
+        idleActionDuration: 700,
+        sleepPose: "sleep",
+        draggedPose: "dragged",
+        introLine: "你好呀~ 我是看板娘！",
+        sleepLine: "好困...先睡一会儿...",
+        poses: [
+          { key: "idle", file: "idle standing.png", label: "待机" },
+          { key: "blink", file: "blink.png", label: "眨眼" },
+          { key: "greet", file: "Greeting.png", label: "打招呼" },
+          { key: "happy", file: "happy laugh.png", label: "开心" },
+          { key: "talk", file: "talking open mouth.png", label: "说话" },
+          { key: "skill", file: "skill cast.png", label: "冰霜技能" },
+          { key: "frozen", file: "Frozen.png", label: "\u51b0\u51bb" },
+          { key: "sleep", file: "sleeping curled up.png", label: "睡觉" },
+          { key: "dragged", file: "dragged sideways reaction.png", label: "拖动反应" }
+        ],
+        poseCycle: ["idle", "greet", "happy", "blink", "talk", "skill", "sleep", "dragged"],
+        speechLines: [
+          "鼠标移过来看看我嘛~",
+          "点我试试？会有惊喜哦！",
+          "你好呀，今天过得怎么样？",
+          "别光看着我，去读文章啦~",
+          "好无聊...陪我玩一会儿？",
+          "嘿嘿，被你发现了~",
+          "我是看板娘，请多关照！",
+          "今天也要元气满满哦~"
+        ],
+        clickLines: [
+          "哎呀！被戳到了~",
+          "干嘛戳我！",
+          "嘻嘻~好痒！",
+          "你好奇心很旺盛嘛~",
+          "再戳就生气了哦！",
+          "呀！轻点啦~"
+        ],
+        poseLines: {
+          greet: "嗨嗨~",
+          happy: "开心！",
+          blink: "眨眼一下~",
+          skill: "冰霜技能，启动。",
+          sleep: "困了，稍微休息一下...",
+          dragged: "不要把我拎太远啦~"
+        },
+        castSkill(api) {
+          api.wake();
+          api.setPose("skill", { temporary: true, duration: 4300 });
+          castFreezeScreenVfx(api);
+          api.showSpeech("冰封领域，展开。", 3600, null);
+          const hutao = registry.get("hutao");
+          if (hutao) {
+            window.setTimeout(() => hutao.react("thinking", "哇，伞沿都结霜啦！", 3000), 520);
+          }
+        },
+        castSupportSkill(api) {
+          const hutao = registry.get("hutao");
+          if (!hutao) {
+            api.showSpeech("\u80e1\u6843\u8fd8\u6ca1\u51fa\u6765\u5462\u3002", 2600, null);
+            return;
+          }
+          api.wake();
+          hutao.wake();
+          api.freeze(5000);
+          hutao.freeze(5000);
+        }
+      },
+      {
+        id: "hutao",
+        name: "胡桃",
+        baseDir: "kbnht",
+        storeKey: "bookerLive2dHutao",
+        restoreIcon: "🌸",
+        defaultLeft: "clamp(150px, 19vw, 262px)",
+        defaultBottom: "12px",
+        skillIcon: "✿",
+        skillLabel: "灵伞祝域",
+        supportSkill: { label: "\u80e1\u6843F\u6280\u80fd", icon: "F" },
+        initialPose: () => (getHour() >= 0 && getHour() < 6 ? "sleep" : "idle"),
+        hoverPose: "thinking",
+        talkPose: "thinking",
+        clickPose: "thinking",
+        idleActionPose: "thinking",
+        idleActionDuration: 1500,
+        sleepPose: "sleep",
+        draggedPose: "dragged",
+        introLine: "锵锵，胡桃也来值班啦！",
+        sleepLine: "困啦...让花灯陪我睡一会儿...",
+        poses: [
+          { key: "idle", file: "idle.png", label: "待机" },
+          { key: "thinking", file: "thinking.png", label: "思考" },
+          { key: "skill", file: "skill cast.png", label: "灵伞祝域" },
+          { key: "frozen", file: "Frozen.png", label: "\u51b0\u51bb" },
+          { key: "sleep", file: "sleeping.png", label: "睡觉" },
+          { key: "dragged", file: "dragged sideways reaction.png", label: "拖动反应" }
+        ],
+        poseCycle: ["idle", "thinking", "skill", "sleep", "dragged"],
+        speechLines: [
+          "本堂主上线，气氛立刻热闹起来！",
+          "要不要听个小故事？保证不吓人。",
+          "清寒负责降温，我负责把场子暖回来~",
+          "别一直盯着我嘛，文章也要看哦。",
+          "今日宜写作、宜摸鱼、宜喝热茶。",
+          "这把伞可是很可靠的！"
+        ],
+        clickLines: [
+          "哎呀，戳到花花了！",
+          "嘿嘿，被你发现啦~",
+          "再戳我就给你贴符哦。",
+          "这位客官，有何贵干？",
+          "轻点轻点，头饰会歪的！"
+        ],
+        poseLines: {
+          thinking: "嗯...让我想想。",
+          skill: "灵伞祝域，开！",
+          sleep: "困啦，先趴一小会儿...",
+          dragged: "哎哎哎，伞要飞走啦！"
+        },
+        castSkill(api) {
+          api.wake();
+          api.setPose("skill", { temporary: true, duration: 5600 });
+          castHutaoCharmEffect(api);
+          api.showSpeech("灵伞祝域，展开！", 4200, null);
+          const qinghan = registry.get("qinghan");
+          if (qinghan) {
+            window.setTimeout(() => qinghan.react("greet", "符光很暖，寒气都被安抚了。", 3200), 620);
+          }
+        },
+        castSupportSkill(api) {
+          const qinghan = registry.get("qinghan");
+          if (!qinghan) {
+            api.showSpeech("\u987e\u6e05\u5bd2\u8fd8\u6ca1\u51fa\u6765\u5462\u3002", 2600, null);
+            return;
+          }
+          api.wake();
+          qinghan.wake();
+          api.setPose("skill", { temporary: true, duration: 10000 });
+          castHutaoLinkEffect(api, qinghan);
+          api.showSpeech("\u8fde\u7ebf\u7ed9\u4f60\uff01", 2200, null);
+          window.setTimeout(() => qinghan.react("greet", "\u6536\u5230\uff0c\u5bd2\u610f\u4f1a\u987a\u7740\u8fd9\u9053\u5149\u56de\u5e94\u3002", 2600), 360);
+        }
+      }
+    ];
+
+    const mountRestoreTab = (config, writeStore) => {
+      if (document.querySelector(`.live2d-restore[data-character="${config.id}"]`)) return;
+      const tab = document.createElement("button");
+      tab.type = "button";
+      tab.className = "live2d-restore";
+      tab.dataset.character = config.id;
+      if (config.defaultLeft) tab.style.left = config.defaultLeft;
+      if (config.defaultBottom) tab.style.bottom = config.defaultBottom;
+      tab.title = `唤回${config.name}`;
+      tab.setAttribute("aria-label", `唤回${config.name}`);
+      tab.innerHTML = `<span class="live2d-restore-icon" aria-hidden="true">${config.restoreIcon}</span><span class="live2d-restore-label">${config.name}</span>`;
+      document.body.appendChild(tab);
+      window.requestAnimationFrame(() => tab.classList.add("is-in"));
+      tab.addEventListener("click", () => {
+        writeStore({ hidden: false });
+        tab.classList.remove("is-in");
+        window.setTimeout(() => window.location.reload(), 200);
+      });
+    };
+
+    const mountCharacter = (config) => {
+      const poseMap = config.poses.reduce((map, pose) => {
+        map[pose.key] = pose;
+        return map;
+      }, {});
+      const poseCycle = config.poseCycle || config.poses.map((pose) => pose.key);
+
+      const readStore = () => {
+        try { return JSON.parse(window.localStorage.getItem(config.storeKey)) || {}; }
+        catch { return {}; }
+      };
+      const writeStore = (patch) => {
+        try {
+          window.localStorage.setItem(config.storeKey, JSON.stringify(Object.assign(readStore(), patch)));
+        } catch {}
+      };
+
+      const saved = readStore();
+      if (saved.hidden) {
+        mountRestoreTab(config, writeStore);
+        return null;
+      }
+
+      const container = document.createElement("div");
+      container.className = "live2d-widget";
+      container.dataset.character = config.id;
+      if (config.defaultLeft) container.style.left = config.defaultLeft;
+      if (config.defaultBottom) container.style.bottom = config.defaultBottom;
+
+      const toolbarButtons = [
+        { action: "chat", label: "说话", icon: "💬" },
+        { action: "skill", label: config.skillLabel, icon: config.skillIcon },
+        ...(config.supportSkill ? [{ action: "support", label: config.supportSkill.label, icon: config.supportSkill.icon }] : []),
+        { action: "duo", label: "双人互动", icon: "♡" },
+        { action: "pose", label: "换动作", icon: "🎭" },
+        { action: "hide", label: "隐藏", icon: "✕" }
+      ];
+      container.innerHTML = `
+        <div class="live2d-toolbar">
+          ${toolbarButtons.map((item) => `<button class="live2d-btn" data-l2d-action="${item.action}" type="button" title="${item.label}" aria-label="${item.label}">${item.icon}</button>`).join("")}
+        </div>
+        <div class="live2d-char" data-live2d-char>
+          <div class="live2d-body">
+            <img class="live2d-img" src="${mascotAsset(config.baseDir, poseMap.idle.file)}" alt="${config.name}：待机" draggable="false">
+            <div class="live2d-shadow"></div>
+          </div>
+          <div class="live2d-speech" data-live2d-speech></div>
+        </div>
+      `;
+      document.body.appendChild(container);
+
+      const char = container.querySelector("[data-live2d-char]");
+      const body = container.querySelector(".live2d-body");
+      const img = container.querySelector(".live2d-img");
+      const speech = container.querySelector("[data-live2d-speech]");
+      const toolbar = container.querySelector(".live2d-toolbar");
+
+      let mouseX = 0.5;
+      let mouseY = 0.5;
+      let targetX = 0.5;
+      let targetY = 0.5;
+      let idlePhase = 0;
+      let isIdle = true;
+      let idleTimeout = 0;
+      let speechTimer = 0;
+      let poseTimer = 0;
+      let poseIndex = 0;
+      let currentPose = "idle";
+      let steadyPose = "idle";
+      let pointerDown = false;
+      let dragMoved = false;
+      let suppressClick = false;
+      let dragStartX = 0;
+      let dragStartY = 0;
+      let dragStartLeft = 0;
+      let dragStartBottom = 0;
+      let sleepTimeout = 0;
+      let autoSleeping = false;
+      let poseBeforeSleep = "idle";
+      let frozenTimeout = 0;
+      let frozenUntil = 0;
+
+      const isFrozen = () => frozenUntil > Date.now();
+
+      const setPose = (key, options = {}) => {
+        if (isFrozen() && key !== "frozen" && !options.allowDuringFrozen) {
+          return;
+        }
+        const pose = poseMap[key] || poseMap.idle;
+        window.clearTimeout(poseTimer);
+
+        currentPose = pose.key;
+        if (!options.temporary && options.remember !== false) {
+          steadyPose = pose.key;
+          poseIndex = Math.max(0, poseCycle.indexOf(pose.key));
+          if (autoSleeping && !options.keepAutoSleep) {
+            autoSleeping = false;
+            poseBeforeSleep = "idle";
+            window.clearTimeout(sleepTimeout);
+          }
+        }
+
+        container.dataset.pose = pose.key;
+        img.dataset.pose = pose.key;
+        img.dataset.fallbackSrc = mascotAsset(config.baseDir, pose.file, false);
+        img.src = mascotAsset(config.baseDir, pose.file);
+        img.alt = `${config.name}：${pose.label}`;
+
+        if (options.duration) {
+          poseTimer = window.setTimeout(() => {
+            setPose(steadyPose, { remember: false });
+          }, options.duration);
+        }
+      };
+
+      const showSpeech = (text, duration = 4000, pose = config.talkPose) => {
+        speech.textContent = text;
+        speech.classList.add("is-visible");
+        if (pose) {
+          setPose(pose, { temporary: true, duration: Math.min(duration, 3600) });
+        }
+        window.clearTimeout(speechTimer);
+        speechTimer = window.setTimeout(() => {
+          speech.classList.remove("is-visible");
+        }, duration);
+      };
+
+      const clampCurrentPosition = () => {
+        const rect = container.getBoundingClientRect();
+        const gap = 12;
+        const nextLeft = clamp(rect.left, gap, Math.max(gap, window.innerWidth - rect.width - gap));
+        const nextBottom = clamp(window.innerHeight - rect.bottom, gap, Math.max(gap, window.innerHeight - rect.height - gap));
+        container.style.left = `${nextLeft}px`;
+        container.style.bottom = `${nextBottom}px`;
+      };
+
+      const restorePosition = () => {
+        if (saved.left) container.style.left = saved.left;
+        if (saved.bottom) container.style.bottom = saved.bottom;
+        window.requestAnimationFrame(clampCurrentPosition);
+      };
+
+      const scheduleSleep = () => {
+        window.clearTimeout(sleepTimeout);
+        sleepTimeout = window.setTimeout(() => {
+          if (currentPose !== config.sleepPose) {
+            autoSleeping = true;
+            poseBeforeSleep = currentPose;
+            setPose(config.sleepPose, { keepAutoSleep: true, remember: false });
+            showSpeech(config.sleepLine, 4000, null);
+          }
+        }, 120000);
+      };
+
+      const wakeFromAutoSleep = () => {
+        if (isFrozen()) return;
+        window.clearTimeout(sleepTimeout);
+        if (!autoSleeping) {
+          scheduleSleep();
+          return;
+        }
+        const wakePose = poseBeforeSleep || "idle";
+        autoSleeping = false;
+        poseBeforeSleep = "idle";
+        setPose(wakePose, { remember: false });
+        isIdle = false;
+        window.clearTimeout(idleTimeout);
+        idleTimeout = window.setTimeout(() => { isIdle = true; }, 3000);
+        scheduleSleep();
+      };
+
+      const unfreeze = () => {
+        window.clearTimeout(frozenTimeout);
+        frozenUntil = 0;
+        container.classList.remove("is-frozen");
+        setPose(steadyPose, { remember: false, allowDuringFrozen: true });
+        scheduleSleep();
+      };
+
+      const freeze = (duration = 5000) => {
+        window.clearTimeout(poseTimer);
+        window.clearTimeout(speechTimer);
+        window.clearTimeout(idleTimeout);
+        window.clearTimeout(sleepTimeout);
+        speech.classList.remove("is-visible");
+        body.classList.remove("live2d-bounce");
+        container.classList.remove("is-dragging", "is-hovered");
+        pointerDown = false;
+        dragMoved = false;
+        suppressClick = false;
+        autoSleeping = false;
+        poseBeforeSleep = "idle";
+        isIdle = false;
+        frozenUntil = Date.now() + duration;
+        container.classList.add("is-frozen");
+        setPose("frozen", { remember: false, allowDuringFrozen: true });
+        frozenTimeout = window.setTimeout(unfreeze, duration);
+      };
+
+      const api = {
+        id: config.id,
+        name: config.name,
+        container,
+        setPose,
+        showSpeech,
+        freeze,
+        wake: wakeFromAutoSleep,
+        react(pose, line, duration = 3000) {
+          if (isFrozen()) return;
+          wakeFromAutoSleep();
+          setPose(pose, { temporary: true, duration });
+          showSpeech(line, duration, null);
+        }
+      };
+      registry.set(config.id, api);
+
+      img.addEventListener("error", () => {
+        const fallback = img.dataset.fallbackSrc;
+        if (!fallback) return;
+        img.dataset.fallbackSrc = "";
+        img.src = fallback;
+      });
+
+      config.poses.forEach((pose) => {
+        const preload = new Image();
+        preload.src = mascotAsset(config.baseDir, pose.file);
+      });
+
+      document.addEventListener("mousemove", (e) => {
+        targetX = e.clientX / window.innerWidth;
+        targetY = e.clientY / window.innerHeight;
+        if (isFrozen()) return;
+        isIdle = false;
+        window.clearTimeout(idleTimeout);
+        idleTimeout = window.setTimeout(() => { isIdle = true; }, 3000);
+        wakeFromAutoSleep();
+      });
+
+      const animate = () => {
+        mouseX += (targetX - mouseX) * 0.04;
+        mouseY += (targetY - mouseY) * 0.04;
+
+        const rotateY = (mouseX - 0.5) * 20;
+        const rotateX = (mouseY - 0.5) * -8;
+        const translateX = (mouseX - 0.5) * 12;
+
+        let idleRotate = 0;
+        let idleBob = 0;
+        if (isIdle) {
+          idlePhase += 0.015;
+          idleRotate = Math.sin(idlePhase) * 2;
+          idleBob = Math.sin(idlePhase * 0.7) * 3;
+        }
+
+        img.style.transform = `perspective(800px) rotateY(${rotateY + idleRotate}deg) rotateX(${rotateX}deg) translateX(${translateX}px) translateY(${idleBob}px)`;
+        requestAnimationFrame(animate);
+      };
+      animate();
+
+      char.addEventListener("click", (e) => {
+        if (e.target.closest(".live2d-toolbar")) return;
+        if (suppressClick) {
+          suppressClick = false;
+          e.preventDefault();
+          return;
+        }
+        if (isFrozen()) {
+          e.preventDefault();
+          return;
+        }
+        wakeFromAutoSleep();
+        body.classList.add("live2d-bounce");
+        showSpeech(pickRandom(config.clickLines), 3000, config.clickPose);
+        window.setTimeout(() => body.classList.remove("live2d-bounce"), 600);
+      });
+
+      char.addEventListener("mouseenter", () => {
+        container.classList.add("is-hovered");
+        if (isFrozen()) return;
+        if (currentPose === "idle" && config.hoverPose) {
+          setPose(config.hoverPose, { temporary: true, duration: 1300 });
+        }
+      });
+      char.addEventListener("mouseleave", () => {
+        container.classList.remove("is-hovered");
+      });
+
+      char.addEventListener("pointerdown", (e) => {
+        if (e.target.closest(".live2d-toolbar")) return;
+        if (isFrozen()) return;
+        pointerDown = true;
+        wakeFromAutoSleep();
+        dragMoved = false;
+        dragStartX = e.clientX;
+        dragStartY = e.clientY;
+        const rect = container.getBoundingClientRect();
+        dragStartLeft = rect.left;
+        dragStartBottom = window.innerHeight - rect.bottom;
+        char.setPointerCapture(e.pointerId);
+      });
+
+      char.addEventListener("pointermove", (e) => {
+        if (!pointerDown) return;
+        if (isFrozen()) return;
+        const dx = e.clientX - dragStartX;
+        const dy = e.clientY - dragStartY;
+        if (!dragMoved && Math.hypot(dx, dy) < 8) return;
+
+        dragMoved = true;
+        container.classList.add("is-dragging");
+        setPose(config.draggedPose, { temporary: true });
+
+        const rect = container.getBoundingClientRect();
+        const gap = 12;
+        const left = clamp(dragStartLeft + dx, gap, Math.max(gap, window.innerWidth - rect.width - gap));
+        const bottom = clamp(dragStartBottom - dy, gap, Math.max(gap, window.innerHeight - rect.height - gap));
+        container.style.left = `${left}px`;
+        container.style.bottom = `${bottom}px`;
+      });
+
+      char.addEventListener("pointerup", (e) => {
+        if (!pointerDown) return;
+        pointerDown = false;
+        if (isFrozen()) {
+          container.classList.remove("is-dragging");
+          if (char.hasPointerCapture(e.pointerId)) {
+            char.releasePointerCapture(e.pointerId);
+          }
+          return;
+        }
+        if (dragMoved) {
+          suppressClick = true;
+          writeStore({
+            left: container.style.left,
+            bottom: container.style.bottom
+          });
+          setPose(steadyPose, { remember: false });
+        }
+        container.classList.remove("is-dragging");
+        if (char.hasPointerCapture(e.pointerId)) {
+          char.releasePointerCapture(e.pointerId);
+        }
+      });
+
+      toolbar.addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-l2d-action]");
+        if (!btn) return;
+        const action = btn.dataset.l2dAction;
+        if (isFrozen() && action !== "hide") return;
+        wakeFromAutoSleep();
+
+        if (action === "chat") {
+          showSpeech(pickRandom(config.speechLines), 5000, config.talkPose);
+        } else if (action === "skill") {
+          config.castSkill(api);
+        } else if (action === "support" && config.castSupportSkill) {
+          config.castSupportSkill(api);
+        } else if (action === "duo") {
+          triggerDuoInteraction(config.id);
+        } else if (action === "pose") {
+          poseIndex = (poseIndex + 1) % poseCycle.length;
+          const pose = poseCycle[poseIndex];
+          setPose(pose);
+          if (config.poseLines[pose]) showSpeech(config.poseLines[pose], 2400, null);
+        } else if (action === "hide") {
+          window.clearTimeout(sleepTimeout);
+          registry.delete(config.id);
+          container.classList.add("live2d-hiding");
+          writeStore({ hidden: true });
+          window.setTimeout(() => {
+            container.remove();
+            mountRestoreTab(config, writeStore);
+          }, 400);
+        }
+      });
+
+      window.setInterval(() => {
+        if (!isFrozen() && isIdle && currentPose === "idle" && Math.random() > 0.72) {
+          showSpeech(pickRandom(config.speechLines), 5000, config.talkPose);
+        }
+      }, 22000);
+
+      window.setInterval(() => {
+        if (!isFrozen() && isIdle && currentPose === "idle" && config.idleActionPose && Math.random() > 0.48) {
+          setPose(config.idleActionPose, { temporary: true, duration: config.idleActionDuration || 900 });
+        }
+      }, 6500);
+
+      window.addEventListener("resize", clampCurrentPosition);
+
+      setPose(config.initialPose(), { remember: false });
+      restorePosition();
+      scheduleSleep();
+
+      window.setTimeout(() => {
+        showSpeech(config.introLine, 5000, config.hoverPose || config.talkPose);
+      }, config.id === "hutao" ? 5200 : 4000);
+
+      return api;
+    };
+
+    characters.forEach(mountCharacter);
+  };
+
   setCurrentYear();
+  ensureVisitorNavLink();
   highlightCurrentNav();
   setupBackToTop();
   setupPostSearch();
@@ -2691,6 +4182,9 @@
   setupAmbientSceneLayer();
   setupPointerTrail();
   setupClickBurst();
+  setupVisitorTracking();
   setupAnimeHero();
   setupPageHeaderAnimation();
+  setupAssistant();
+  setupLive2DChar();
 })();

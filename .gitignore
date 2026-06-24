@@ -21,12 +21,27 @@ desktop.ini
 *.swo
 *~
 
+# Local AI agent prompts and scratch output
+.claude/
+.qoder/
+assets/claude.md
+output.md
+nul
+/kbn/
+/kbnht/
+
 # Logs and temporary files
 *.log
 *.tmp
 .cache/
 tmp/
 temp/
+
+# Visitor analytics runtime data
+data/
+*.db
+*.db-shm
+*.db-wal
 
 # Build output and local archives
 dist/
@@ -39,6 +54,9 @@ build/
 # Node.js
 node_modules/
 package-lock.json
+
+# Temporary Live2D vendor install dir
+.tmp-live2d-vendor/
 
 # Python
 __pycache__/

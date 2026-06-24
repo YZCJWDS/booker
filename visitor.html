@@ -1,0 +1,162 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Booker 访客信息与访问记录后台。">
+  <title>访客记录 | Odile's Lab</title>
+  <link rel="icon" href="./tx/1.jpg" type="image/jpeg">
+  <link rel="apple-touch-icon" href="./tx/1.jpg">
+  <link rel="stylesheet" href="./assets/css/modern.css?v=visitor-analytics-20260611">
+  <link rel="stylesheet" href="./assets/css/visitor.css?v=visitor-pagination-20260612">
+  <link rel="stylesheet" href="./assets/config/backgrounds.css">
+  <script src="./assets/js/main.js?v=visitor-admin-20260611" defer></script>
+  <script src="./assets/js/visitor.js?v=visitor-pagination-20260612" defer></script>
+</head>
+<body data-page="visitor">
+  <a class="skip-link" href="#main">跳到主要内容</a>
+  <div class="bg-mesh"></div>
+
+  <div class="nav-wrapper">
+    <nav class="nav" aria-label="Primary navigation">
+      <a class="brand" href="./index.html">
+        <span class="brand-icon"><img src="./tx/1.jpg" alt="" decoding="async"></span>
+        <span>Odile's Lab</span>
+      </a>
+      <div class="nav-links">
+        <a href="./index.html" data-nav="home">首页</a>
+        <a href="./posts.html" data-nav="articles">文章</a>
+        <a href="./gallery.html" data-nav="gallery">相册</a>
+        <a href="./projects.html" data-nav="projects">项目</a>
+        <a href="./about.html" data-nav="about">关于</a>
+        <a href="./visitor.html" data-nav="visitor">访客</a>
+        <a href="https://github.com/YZCJWDS?tab=repositories" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </div>
+    </nav>
+  </div>
+
+  <main id="main" class="visitor-shell">
+    <div class="container">
+      <section class="visitor-hero">
+        <div class="visitor-panel">
+          <span class="visitor-eyebrow">Visitor Analytics</span>
+          <h1>访问记录与后台查询</h1>
+          <p class="visitor-copy">
+            这里会显示当前访问者的访问时间、IP、地理位置和浏览器版本信息。完整访客日志需要输入后台密码后查看。
+          </p>
+          <div class="visitor-status" data-visitor-status>正在连接访客记录服务</div>
+        </div>
+
+        <section class="visitor-panel" aria-labelledby="visitor-current-title">
+          <h2 id="visitor-current-title">当前访问</h2>
+          <div class="visitor-card-grid" data-current-visitor>
+            <div class="visitor-info-card">
+              <small>访问时间</small>
+              <strong data-field="visited_at">--</strong>
+              <span>服务器 UTC 时间</span>
+            </div>
+            <div class="visitor-info-card">
+              <small>IP 地址</small>
+              <strong data-field="ip">--</strong>
+              <span data-field="ip_version">--</span>
+            </div>
+            <div class="visitor-info-card">
+              <small>地理位置</small>
+              <strong data-field="location">--</strong>
+              <span data-field="isp">--</span>
+            </div>
+            <div class="visitor-info-card">
+              <small>浏览器</small>
+              <strong data-field="browser">--</strong>
+              <span data-field="system">--</span>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section class="visitor-stat-row" aria-label="访问统计">
+        <div class="visitor-stat">
+          <small>总访问</small>
+          <strong data-stat="total_visits">--</strong>
+        </div>
+        <div class="visitor-stat">
+          <small>最近 24 小时</small>
+          <strong data-stat="recent_24h">--</strong>
+        </div>
+        <div class="visitor-stat">
+          <small>独立 IP</small>
+          <strong data-stat="unique_ips">--</strong>
+        </div>
+      </section>
+
+      <section class="visitor-grid">
+        <div class="visitor-panel">
+          <h2>公开统计</h2>
+          <p class="visitor-muted">这里展示脱敏后的最近访问与热门页面，不公开其他访客的完整 IP。</p>
+          <div class="visitor-list" data-public-list></div>
+        </div>
+
+        <div class="visitor-panel">
+          <h2>后台查询入口</h2>
+          <p class="visitor-muted">输入后台密码后，可以查看完整访问时间、IP、地理位置、浏览器版本、访问页面和 User-Agent。</p>
+
+          <form class="visitor-admin-form" data-admin-login>
+            <input type="password" name="password" autocomplete="current-password" placeholder="后台密码" aria-label="后台密码">
+            <button class="btn btn-primary" type="submit">进入后台</button>
+          </form>
+          <div class="visitor-admin-error" data-admin-error></div>
+
+          <section class="visitor-admin-panel" data-admin-panel aria-label="访客后台">
+            <div class="visitor-admin-actions">
+              <div class="visitor-search">
+                <input type="search" data-admin-search placeholder="搜索 IP、页面、城市、浏览器" aria-label="搜索访客记录">
+                <button class="btn btn-secondary" type="button" data-admin-search-button>搜索</button>
+              </div>
+              <button class="btn btn-outline" type="button" data-admin-refresh>刷新</button>
+              <a class="btn btn-primary visitor-admin-link" href="./visitor-records.html" data-admin-full-link hidden>完整记录</a>
+            </div>
+            <div class="visitor-admin-meta">
+              <span data-admin-range-label>最近 24 小时记录</span>
+              <span data-admin-total>--</span>
+              <span data-admin-page>--</span>
+            </div>
+
+            <div class="visitor-table-wrap">
+              <table class="visitor-table">
+                <thead>
+                  <tr>
+                    <th>时间</th>
+                    <th>IP</th>
+                    <th>位置</th>
+                    <th>浏览器</th>
+                    <th>页面</th>
+                    <th>User-Agent</th>
+                  </tr>
+                </thead>
+                <tbody data-admin-visits>
+                  <tr>
+                    <td colspan="6">登录后显示访客记录</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="visitor-pagination">
+              <button class="btn btn-outline" type="button" data-admin-prev>上一页</button>
+              <button class="btn btn-outline" type="button" data-admin-next>下一页</button>
+            </div>
+          </section>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p>© <span data-year></span> Odile's Lab. 访问统计由 Booker 本地服务记录。</p>
+      <a href="./index.html">返回首页</a>
+    </div>
+  </footer>
+
+  <button class="back-to-top" type="button" aria-label="返回顶部" data-back-to-top>↑</button>
+</body>
+</html>

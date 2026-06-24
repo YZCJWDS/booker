@@ -3,6 +3,7 @@ param(
     [string]$VpsUser,
     [string]$VpsHost,
     [string]$VpsPath,
+    [string]$VisitorAdminPassword,
     [string]$SshKey,
     [switch]$SetupServer,
     [switch]$SkipServerSetup,
@@ -12,6 +13,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+# PATCH_MARKER: FINAL_LF_UPLOAD_20260609
 
 $ProjectRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 $ConfigFile = Join-Path $ProjectRoot ".deploy-config.ps1.json"
@@ -91,8 +93,11 @@ function Write-Utf8NoBomFile {
         [string]$Content
     )
 
+    # Remote bash scripts must use Linux LF line endings. If CRLF is uploaded,
+    # systemctl receives names such as "nginx\r" and bash heredocs can break.
+    $normalizedContent = $Content.Replace("`r`n", "`n").Replace("`r", "`n")
     $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
-    [System.IO.File]::WriteAllText($Path, $Content, $utf8NoBom)
+    [System.IO.File]::WriteAllText($Path, $normalizedContent, $utf8NoBom)
 }
 
 function Expand-EnvVariables {
@@ -188,9 +193,28 @@ function Invoke-RemoteScript {
         [string]$Script
     )
 
-    $Script | & ssh @SshArgs $RemoteTarget "bash -s"
-    if ($LASTEXITCODE -ne 0) {
-        Fail "Remote command failed."
+    # Robust Windows -> Linux execution: write a LF-only .sh file, upload it,
+    # run it with bash, then remove it. This avoids PowerShell pipe CRLF issues.
+    $localRemoteScript = Join-Path $env:TEMP "booker-setup-$([guid]::NewGuid().ToString('N')).sh"
+    $remoteRemoteScript = "/tmp/booker-setup-$([DateTimeOffset]::UtcNow.ToUnixTimeSeconds())-$([guid]::NewGuid().ToString('N')).sh"
+
+    try {
+        Write-Utf8NoBomFile -Path $localRemoteScript -Content $Script
+
+        & scp @SshArgs $localRemoteScript "${RemoteTarget}:$remoteRemoteScript"
+        if ($LASTEXITCODE -ne 0) {
+            Fail "Failed to upload remote setup script."
+        }
+
+        $remoteRunCommand = "bash $(Quote-Bash $remoteRemoteScript); status=`$?; rm -f $(Quote-Bash $remoteRemoteScript); exit `$status"
+        & ssh @SshArgs $RemoteTarget $remoteRunCommand
+        if ($LASTEXITCODE -ne 0) {
+            Fail "Remote command failed."
+        }
+    } finally {
+        if (Test-Path $localRemoteScript) {
+            Remove-Item -LiteralPath $localRemoteScript -Force
+        }
     }
 }
 
@@ -332,6 +356,7 @@ Write-Ok "SSH connection OK."
 Save-Config -User $VpsUser -HostName $VpsHost -Path $VpsPath -KeyPath $SshKey -Setup $shouldSetupServer
 
 $remotePathQ = Quote-Bash $VpsPath
+$visitorAdminPasswordQ = Quote-Bash $VisitorAdminPassword
 $remoteArchive = "/tmp/booker-deploy-$([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()).tar.gz"
 $remoteArchiveQ = Quote-Bash $remoteArchive
 $archive = Join-Path $env:TEMP "booker-deploy-$([guid]::NewGuid().ToString('N')).tar.gz"
@@ -367,6 +392,20 @@ if ! command -v nginx >/dev/null 2>&1; then
   fi
 fi
 
+if ! command -v python3 >/dev/null 2>&1; then
+  if command -v apt-get >/dev/null 2>&1; then
+    `$SUDO apt-get update
+    `$SUDO apt-get install -y python3
+  elif command -v dnf >/dev/null 2>&1; then
+    `$SUDO dnf install -y python3
+  elif command -v yum >/dev/null 2>&1; then
+    `$SUDO yum install -y python3
+  else
+    echo "Unsupported Linux package manager. Install python3 manually, then rerun with -SkipServerSetup."
+    exit 1
+  fi
+fi
+
 `$SUDO mkdir -p "`$DEPLOY_PATH"
 
 if id www-data >/dev/null 2>&1; then
@@ -375,6 +414,108 @@ elif id nginx >/dev/null 2>&1; then
   WEB_USER="nginx"
 else
   WEB_USER="`$(id -un)"
+fi
+
+PYTHON_BIN="`$(command -v python3)"
+ENV_FILE="/etc/booker-visitor.env"
+DB_DIR="/var/lib/booker"
+DB_PATH="`$DB_DIR/visitors.db"
+VISITOR_ADMIN_PASSWORD=$visitorAdminPasswordQ
+NEW_PASSWORD_GENERATED=0
+
+`$SUDO mkdir -p "`$DB_DIR"
+`$SUDO chown -R "`$WEB_USER:`$WEB_USER" "`$DB_DIR" || true
+`$SUDO chmod 750 "`$DB_DIR" || true
+
+if [ -n "`$VISITOR_ADMIN_PASSWORD" ] || [ ! -f "`$ENV_FILE" ]; then
+  if [ -n "`$VISITOR_ADMIN_PASSWORD" ]; then
+    ADMIN_PASSWORD="`$VISITOR_ADMIN_PASSWORD"
+  else
+    if command -v openssl >/dev/null 2>&1; then
+      ADMIN_PASSWORD="`$(openssl rand -base64 24)"
+    else
+      ADMIN_PASSWORD="`$(tr -dc 'A-Za-z0-9_@%+=' </dev/urandom | head -c 32)"
+    fi
+    NEW_PASSWORD_GENERATED=1
+  fi
+
+  if command -v openssl >/dev/null 2>&1; then
+    SESSION_SECRET="`$(openssl rand -hex 32)"
+  else
+    SESSION_SECRET="`$(tr -dc 'A-Fa-f0-9' </dev/urandom | head -c 64)"
+  fi
+
+  TMP_ENV="`$(mktemp)"
+  export BOOKER_ADMIN_PASSWORD_VALUE="`$ADMIN_PASSWORD"
+  export BOOKER_SESSION_SECRET_VALUE="`$SESSION_SECRET"
+  export BOOKER_DB_PATH_VALUE="`$DB_PATH"
+  export BOOKER_STATIC_ROOT_VALUE="`$DEPLOY_PATH"
+  python3 - <<'PY' > "`$TMP_ENV"
+import os
+
+def env_quote(value):
+    return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+rows = {
+    "BOOKER_ADMIN_PASSWORD": os.environ["BOOKER_ADMIN_PASSWORD_VALUE"],
+    "BOOKER_SESSION_SECRET": os.environ["BOOKER_SESSION_SECRET_VALUE"],
+    "BOOKER_DB_PATH": os.environ["BOOKER_DB_PATH_VALUE"],
+    "BOOKER_STATIC_ROOT": os.environ["BOOKER_STATIC_ROOT_VALUE"],
+    "BOOKER_TRUSTED_PROXIES": "127.0.0.1,::1",
+}
+
+for key, value in rows.items():
+    print(f"{key}={env_quote(value)}")
+PY
+  `$SUDO install -m 600 -o root -g root "`$TMP_ENV" "`$ENV_FILE"
+  rm -f "`$TMP_ENV"
+  unset BOOKER_ADMIN_PASSWORD_VALUE BOOKER_SESSION_SECRET_VALUE BOOKER_DB_PATH_VALUE BOOKER_STATIC_ROOT_VALUE
+
+  if [ "`$NEW_PASSWORD_GENERATED" = "1" ]; then
+    echo "Generated Booker visitor admin password: `$ADMIN_PASSWORD"
+  else
+    echo "Booker visitor admin password was updated from deployment input."
+  fi
+else
+  echo "Booker visitor admin password exists; preserving current VPS value."
+fi
+
+`$SUDO tee /usr/local/bin/booker-visits >/dev/null <<EOF
+#!/bin/sh
+exec `$PYTHON_BIN "`$DEPLOY_PATH/server/visitor_api.py" --db "`$DB_PATH" "\`$@"
+EOF
+`$SUDO chmod 755 /usr/local/bin/booker-visits
+
+if command -v systemctl >/dev/null 2>&1; then
+  `$SUDO tee /etc/systemd/system/booker-visitor.service >/dev/null <<EOF
+[Unit]
+Description=Booker visitor analytics API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=`$WEB_USER
+Group=`$WEB_USER
+WorkingDirectory=`$DEPLOY_PATH
+EnvironmentFile=`$ENV_FILE
+Environment=PYTHONUNBUFFERED=1
+ExecStart=`$PYTHON_BIN `$DEPLOY_PATH/server/visitor_api.py --serve --host 127.0.0.1 --port 8765 --db `$DB_PATH --static-root `$DEPLOY_PATH
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+ReadWritePaths=`$DB_DIR
+
+[Install]
+WantedBy=multi-user.target
+EOF
+  `$SUDO systemctl daemon-reload
+  `$SUDO systemctl enable booker-visitor >/dev/null 2>&1 || true
+else
+  echo "systemctl is not available; start server/visitor_api.py manually on port 8765."
 fi
 
 if [ -d /etc/nginx/sites-available ]; then
@@ -386,8 +527,17 @@ server {
     root $VpsPath;
     index index.html;
 
+    location /api/ {
+        proxy_pass http://127.0.0.1:8765;
+        proxy_http_version 1.1;
+        proxy_set_header Host \`$host;
+        proxy_set_header X-Real-IP \`$remote_addr;
+        proxy_set_header X-Forwarded-For \`$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \`$scheme;
+    }
+
     location / {
-        try_files \$uri \$uri/ /404.html;
+        try_files \`$uri \`$uri/ /404.html;
     }
 
     error_page 404 /404.html;
@@ -410,8 +560,17 @@ server {
     root $VpsPath;
     index index.html;
 
+    location /api/ {
+        proxy_pass http://127.0.0.1:8765;
+        proxy_http_version 1.1;
+        proxy_set_header Host \`$host;
+        proxy_set_header X-Real-IP \`$remote_addr;
+        proxy_set_header X-Forwarded-For \`$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \`$scheme;
+    }
+
     location / {
-        try_files \$uri \$uri/ /404.html;
+        try_files \`$uri \`$uri/ /404.html;
     }
 
     error_page 404 /404.html;
@@ -427,12 +586,13 @@ fi
 `$SUDO chown -R "`$WEB_USER:`$WEB_USER" "`$DEPLOY_PATH" || true
 `$SUDO nginx -t
 `$SUDO systemctl enable nginx >/dev/null 2>&1 || true
-`$SUDO systemctl reload nginx >/dev/null 2>&1 || `$SUDO service nginx reload
+`$SUDO systemctl restart nginx >/dev/null 2>&1 || `$SUDO service nginx restart
 "@
         Invoke-RemoteScript -SshArgs $sshArgs -RemoteTarget $remoteTarget -Script $setupScript
         Write-Ok "Nginx is ready."
     } else {
         Write-Info "[1/4] Skipping Nginx setup."
+        Write-Warn "Visitor API setup is also skipped. Make sure booker-visitor and /api/ proxy already exist on the VPS."
     }
 
     Write-Info "[2/4] Creating local archive..."
@@ -441,6 +601,10 @@ fi
         --exclude=".deploy-config" `
         --exclude=".deploy-config.ps1.json" `
         --exclude="node_modules" `
+        --exclude="__pycache__" `
+        --exclude="*/__pycache__" `
+        --exclude="data" `
+        --exclude=".tmp-visitor-check" `
         --exclude="*.sh" `
         --exclude="*.ps1" `
         --exclude="*.log" `
@@ -503,7 +667,12 @@ rm -f "$ARCHIVE_PATH"
 
 if command -v nginx >/dev/null 2>&1; then
   $SUDO nginx -t
-  $SUDO systemctl reload nginx >/dev/null 2>&1 || $SUDO service nginx reload || true
+  $SUDO systemctl restart nginx >/dev/null 2>&1 || $SUDO service nginx restart || true
+fi
+
+if command -v systemctl >/dev/null 2>&1 && [ -f /etc/systemd/system/booker-visitor.service ]; then
+  $SUDO systemctl daemon-reload
+  $SUDO systemctl restart booker-visitor
 fi
 '@
 
@@ -530,6 +699,10 @@ fi
 
     Write-Host ""
     Write-Ok "Visit: http://$VpsHost/"
+    Write-Ok "Visitor page: http://$VpsHost/visitor.html"
+    Write-Ok "Full visitor records: http://$VpsHost/visitor-records.html"
+    Write-Host "Visitor service check: ssh $remoteTarget 'sudo systemctl status booker-visitor --no-pager'"
+    Write-Host "Visitor records query: ssh $remoteTarget 'sudo booker-visits --list --limit 20'"
     Write-Warn "If deployment succeeds but the page does not open, check Oracle Cloud Security List / VCN / NSG inbound rule for TCP 80."
 } finally {
     if (Test-Path $archive) {

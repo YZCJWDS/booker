@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live2D 运行环境自检</title>
+  <style>
+    body { font-family: system-ui, "Segoe UI", sans-serif; max-width: 720px; margin: 40px auto; padding: 0 20px; line-height: 1.6; color: #1f2937; }
+    h1 { font-size: 20px; }
+    .check { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 10px; margin: 8px 0; background: #f3f4f6; font-family: ui-monospace, "Cascadia Code", monospace; font-size: 14px; }
+    .check .mark { width: 22px; text-align: center; font-size: 16px; }
+    .ok { background: #ecfdf5; color: #065f46; }
+    .fail { background: #fef2f2; color: #991b1b; }
+    .summary { margin-top: 20px; padding: 14px 16px; border-radius: 10px; font-weight: 600; }
+    .summary.ok { background: #ecfdf5; color: #065f46; }
+    .summary.fail { background: #fef2f2; color: #991b1b; }
+    code { background: #e5e7eb; padding: 1px 6px; border-radius: 4px; }
+    .note { font-size: 13px; color: #6b7280; margin-top: 16px; }
+  </style>
+</head>
+<body>
+  <h1>Live2D 运行环境自检</h1>
+  <p>本页按要求顺序加载三个本地 vendor 文件,并检查全局对象是否就位。请通过本地服务器访问(不要用 <code>file://</code> 直接打开,否则脚本可能被浏览器拦截)。</p>
+
+  <div id="results"></div>
+  <div id="summary"></div>
+
+  <p class="note">
+    加载顺序:<code>live2dcubismcore.min.js</code> → <code>pixi.min.js</code> → <code>cubism4.min.js</code>。
+    其中 cubism core 与 pixi 互不依赖,但 pixi 必须在 cubism4 之前;cubism core 必须在加载任何模型前存在。
+  </p>
+
+  <!-- 1. Live2D Cubism Core(加载模型前必须存在) -->
+  <script src="assets/vendor/live2d/live2dcubismcore.min.js"></script>
+  <!-- 2. PixiJS v6(必须在 cubism4 之前) -->
+  <script src="assets/vendor/pixi/pixi.min.js"></script>
+  <!-- 3. pixi-live2d-display Cubism4 构建(挂载到 window.PIXI.live2d) -->
+  <script src="assets/vendor/pixi-live2d-display/cubism4.min.js"></script>
+
+  <script>
+    (function () {
+      var checks = [
+        { label: "window.PIXI 存在", pass: typeof window.PIXI !== "undefined" },
+        { label: "window.PIXI.live2d 存在", pass: !!(window.PIXI && window.PIXI.live2d) },
+        { label: "window.PIXI.live2d.Live2DModel 存在", pass: !!(window.PIXI && window.PIXI.live2d && window.PIXI.live2d.Live2DModel) },
+        { label: "window.Live2DCubismCore 存在", pass: typeof window.Live2DCubismCore !== "undefined" }
+      ];
+
+      var results = document.getElementById("results");
+      var allPass = true;
+
+      checks.forEach(function (c) {
+        if (!c.pass) allPass = false;
+        var row = document.createElement("div");
+        row.className = "check " + (c.pass ? "ok" : "fail");
+        row.innerHTML = '<span class="mark">' + (c.pass ? "✓" : "✕") + '</span><span>' + c.label + '</span>';
+        results.appendChild(row);
+      });
+
+      var summary = document.getElementById("summary");
+      summary.className = "summary " + (allPass ? "ok" : "fail");
+      if (allPass) {
+        summary.textContent = "✓ 环境就绪:可以开始加载 Cubism 3 / 4 模型。";
+      } else {
+        var msg = "✕ 环境未就绪。";
+        if (typeof window.Live2DCubismCore === "undefined") {
+          msg += " 缺少 Live2DCubismCore —— 请将官方 live2dcubismcore.min.js 放到 assets/vendor/live2d/,或检查脚本加载顺序。";
+        }
+        summary.textContent = msg;
+      }
+
+      console.log("[live2d-env-check]", {
+        PIXI: typeof window.PIXI,
+        "PIXI.live2d": !!(window.PIXI && window.PIXI.live2d),
+        "PIXI.live2d.Live2DModel": !!(window.PIXI && window.PIXI.live2d && window.PIXI.live2d.Live2DModel),
+        Live2DCubismCore: typeof window.Live2DCubismCore
+      });
+    })();
+  </script>
+</body>
+</html>
