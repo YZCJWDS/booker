@@ -3155,7 +3155,10 @@
     const inPost = window.location.pathname.replace(/\\/g, "/").includes("/posts/");
     const prefix = inPost ? "../" : "./";
     const encodeAssetName = (file) => file.split("/").map((part) => encodeURIComponent(part)).join("/");
-    const mascotAsset = (baseDir, file, transparent = true) => `${prefix}assets/mascot/${baseDir}/${transparent ? "transparent/" : ""}${encodeAssetName(file)}`;
+    const assetVersion = "kanban-20260624";
+    const versionedAsset = (url) => `${url}?v=${assetVersion}`;
+    const mascotAsset = (baseDir, file, transparent = true) => versionedAsset(`${prefix}assets/mascot/${baseDir}/${transparent ? "transparent/" : ""}${encodeAssetName(file)}`);
+    const kbnAsset = (file) => versionedAsset(`${prefix}assets/mascot/kbn/${encodeAssetName(file)}`);
     const pickRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
     const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
     const getHour = () => new Date().getHours();
@@ -3295,14 +3298,13 @@
       // AI-generated full-screen VFX image layers (black-bg PNGs, screen-blended).
       // These provide the high-fidelity frost / crack / shatter texture that pure
       // CSS gradients cannot match; the CSS layers above add dynamic light & sigil.
-      const vfxBase = `${prefix}assets/mascot/kbn/`;
       const vfxLayer = document.createElement("div");
       vfxLayer.className = "freeze-vfx-effect";
       vfxLayer.setAttribute("aria-hidden", "true");
       vfxLayer.innerHTML = `
-        <span class="freeze-vfx-layer freeze-vfx-wave" style="background-image:url('${vfxBase}freeze-vfx-wave.png')"></span>
-        <span class="freeze-vfx-layer freeze-vfx-locked" style="background-image:url('${vfxBase}freeze-vfx-locked.png')"></span>
-        <span class="freeze-vfx-layer freeze-vfx-shatter" style="background-image:url('${vfxBase}freeze-vfx-shatter.png')"></span>
+        <span class="freeze-vfx-layer freeze-vfx-wave" style="background-image:url('${kbnAsset("freeze-vfx-wave.png")}')"></span>
+        <span class="freeze-vfx-layer freeze-vfx-locked" style="background-image:url('${kbnAsset("freeze-vfx-locked.png")}')"></span>
+        <span class="freeze-vfx-layer freeze-vfx-shatter" style="background-image:url('${kbnAsset("freeze-vfx-shatter.png")}')"></span>
       `;
       document.body.appendChild(vfxLayer);
 
@@ -3326,8 +3328,6 @@
       const rect = originApi?.container?.getBoundingClientRect();
       const originX = rect ? rect.left + rect.width * 0.5 : Math.min(window.innerWidth * 0.11, 150);
       const originY = rect ? rect.bottom - rect.height * 0.08 : window.innerHeight - 90;
-      const vfxBase = `${prefix}assets/mascot/kbn/`;
-
       const layer = document.createElement("div");
       layer.className = "freeze-screen-effect freeze-screen-effect-vfx";
       layer.setAttribute("aria-hidden", "true");
@@ -3335,9 +3335,9 @@
       layer.style.setProperty("--freeze-origin-y", `${Math.round(originY)}px`);
       layer.innerHTML = `
         <span class="freeze-vfx-cold-tint"></span>
-        <span class="freeze-vfx-layer freeze-vfx-wave" style="background-image:url('${vfxBase}freeze-vfx-wave-clean.png')"></span>
-        <span class="freeze-vfx-layer freeze-vfx-locked" style="background-image:url('${vfxBase}freeze-vfx-locked-clean.png')"></span>
-        <span class="freeze-vfx-layer freeze-vfx-shatter" style="background-image:url('${vfxBase}freeze-vfx-shatter-clean.png')"></span>
+        <span class="freeze-vfx-layer freeze-vfx-wave" style="background-image:url('${kbnAsset("freeze-vfx-wave-clean.png")}')"></span>
+        <span class="freeze-vfx-layer freeze-vfx-locked" style="background-image:url('${kbnAsset("freeze-vfx-locked-clean.png")}')"></span>
+        <span class="freeze-vfx-layer freeze-vfx-shatter" style="background-image:url('${kbnAsset("freeze-vfx-shatter-clean.png")}')"></span>
       `;
       document.body.appendChild(layer);
 
